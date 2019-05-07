@@ -12,5 +12,3 @@ def fetch_data():
     json_data = pd.read_json(URL)
     stations = pd.DataFrame.from_reco/rds(data=json_data.data.stations, index='station_id')
 
-
-kofprjfipow

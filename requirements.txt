@@ -3,3 +3,4 @@ networkx>=2.3
 haversine>=2.0
 pandas>=0.24
 geopy>=1.19
+staticmap

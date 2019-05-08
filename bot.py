@@ -1,7 +1,11 @@
+import telegram as tg
 import telegram.ext as tge
 
 
-UPDATER = tge.Updater(token="")  # TODO: insert token
+with open('token.txt') as token_file:
+    TOKEN: str = token_file.read().strip()
+
+UPDATER = tge.Updater(token=TOKEN)
 DISPATCHER = UPDATER.dispatcher
 BOT = UPDATER.bot
 
@@ -35,45 +39,58 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
 
 
 @cmdhandler()
-def start(bot, update):
+def start(bot: tg.Bot, update: tg.Update):
     raise NotImplementedError
 
 
 @cmdhandler()
-def help(bot, update):
+def help(bot: tg.Bot, update: tg.Update):
     raise NotImplementedError
 
 
 @cmdhandler()
-def authors(bot, update):
+def authors(bot: tg.Bot, update: tg.Update):
     raise NotImplementedError
 
 
 @cmdhandler()
-def graph(bot, update):
+def graph(bot: tg.Bot, update: tg.Update):
     raise NotImplementedError
 
 
 @cmdhandler()
-def nodes(bot, update):
+def nodes(bot: tg.Bot, update: tg.Update):
     raise NotImplementedError
 
 
 @cmdhandler()
-def edges(bot, update):
+def edges(bot: tg.Bot, update: tg.Update):
     raise NotImplementedError
 
 
 @cmdhandler()
-def components(bot, update):
+def components(bot: tg.Bot, update: tg.Update):
     raise NotImplementedError
 
 
 @cmdhandler()
-def route(bot, update):
+def route(bot: tg.Bot, update: tg.Update):
     raise NotImplementedError
 
 
 @cmdhandler()
-def plotgraph(bot, update):
+def plotgraph(bot: tg.Bot, update: tg.Update):
     raise NotImplementedError
+
+
+def main():
+    import logging
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                        level=logging.INFO)
+
+    UPDATER.start_polling()
+
+
+if __name__ == '__main__':
+    main()
+

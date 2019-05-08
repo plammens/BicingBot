@@ -1,6 +1,7 @@
+from traceback import format_exception_only
+
 import telegram as tg
 import telegram.ext as tge
-
 
 with open('token.txt') as token_file:
     TOKEN: str = token_file.read().strip()
@@ -17,6 +18,9 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
     to the global DISPATCHER. If ``command`` is not specified it defaults to
     the decorated function's name.
 
+    The callback is also decorated with an exception handler before
+    constructing the command handler.
+
     :param command: name of bot command to add a handler for
     :param handler_kwargs: additional keyword arguments for the
                            creation of the command handler
@@ -29,7 +33,11 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
         command = command or callback.__name__
 
         def decorated(bot, update, *args, **kwargs):
-            return callback(bot, update, *args, **kwargs)
+            try:
+                return callback(bot, update, *args, **kwargs)
+            except Exception as e:
+                text = ERROR_TXT + "\n\n`{}`".format(format_exception_only(type(e), e)[0])
+                update.message.reply_markdown(text)
 
         handler = tge.CommandHandler(command, decorated, **handler_kwargs)
         DISPATCHER.add_handler(handler)
@@ -83,7 +91,7 @@ def plotgraph(bot: tg.Bot, update: tg.Update):
     raise NotImplementedError
 
 
-def main():
+def start_bot():
     import logging
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                         level=logging.INFO)
@@ -91,12 +99,20 @@ def main():
     UPDATER.start_polling()
 
 
+
+
+START_TXT: str
+HELP_TXT: str
+AUTHORS_TXT: str
+ERROR_TXT: str
+
+# Load text files:
+for text_name in ('start', 'help', 'authors', 'error'):
+    text_var = '{}_TXT'.format(text_name.upper())
+    with open('text/{}.md'.format(text_name), 'r') as text_file:
+        globals()[text_var] = text_file.read().strip()
+
+
+# Main entry point if run as script:
 if __name__ == '__main__':
-    main()
-
-START_TXT: str = "Hi!"
-HELP_TXT: str = "help!!!!"
-AUTHORS_TXT: str = r"""The authors of this project are:
-
-                       Paolo Lammens
-                       Aleix Torres Camps"""
+    start_bot()

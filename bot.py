@@ -40,17 +40,17 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
 
 @cmdhandler()
 def start(bot: tg.Bot, update: tg.Update):
-    raise NotImplementedError
+    update.message.reply_markdown(START_TXT)
 
 
 @cmdhandler()
 def help(bot: tg.Bot, update: tg.Update):
-    raise NotImplementedError
+    update.message.reply_markdown(HELP_TXT)
 
 
 @cmdhandler()
 def authors(bot: tg.Bot, update: tg.Update):
-    raise NotImplementedError
+    update.message.reply_markdown(AUTHORS_TXT)
 
 
 @cmdhandler()
@@ -94,3 +94,9 @@ def main():
 if __name__ == '__main__':
     main()
 
+START_TXT: str = "Hi!"
+HELP_TXT: str = "help!!!!"
+AUTHORS_TXT: str = r"""The authors of this project are:
+
+                       Paolo Lammens
+                       Aleix Torres Camps"""

@@ -3,6 +3,7 @@ from typing import Dict, Iterable, Set, Tuple
 import math
 import networkx as nx
 import pandas as pd
+from haversine import haversine, Unit
 
 URL = 'https://api.bsmsa.eu/ext/api/bsm/gbfs/v2/en/station_information'
 
@@ -27,10 +28,34 @@ class Coordinate:
         self.lat = latitude
         self.lon = longitude
 
+    def __iter__(self):
+        yield self.lat
+        yield self.lon
+
+
+class StationWrapper:
+    """
+    Wrapper for a Bicing station. Can be constructed from any object that has
+    the same attributes as the rows in the DataFrame returned by ``fetch_data``.
+    Implements some extra utilities on top of the data storage.
+    """
+
+    def __init__(self, station):
+        self.__station = station
+
+    def __getattr__(self, item):
+        return getattr(self.__station, item)
+
+    def __repr__(self):
+        return repr(self.__station)
+
+    @property
+    def coord(self):
+        """Get the coordinates for this station as a ``Coordinate`` object"""
+        return Coordinate(self.lat, self.lon)
+
 
 class BicingGraph(nx.Graph):
-    Grid = Dict[Tuple[int, int], Set[int]]
-
     def __init__(self, stations: Iterable, **attr):
         super().__init__(**attr)
         self.add_nodes_from(stations)
@@ -41,7 +66,8 @@ class BicingGraph(nx.Graph):
 
     @staticmethod
     def from_dataframe(stations: pd.DataFrame, **kwargs) -> 'BicingGraph':
-        return BicingGraph(stations.iterrows(), **kwargs)
+        rows = stations.itertuples(name='Station')
+        return BicingGraph(tuple(map(StationWrapper, rows)), **kwargs)
 
     @property
     def distance(self):
@@ -50,38 +76,61 @@ class BicingGraph(nx.Graph):
 
     @distance.setter
     def distance(self, value):
-        self.construct_graph(distance=value)
+        """
+        Setting a new distance for the graph triggers a re-construction
+        of the geometric graph with the new distance.
+        """
+        self.construct_graph(dist=value)
         self._distance = value
 
-    def construct_graph(self, distance: float):
-        """Construct geometric graph with a new distance"""
-        if distance < 0:
+    def construct_graph(self, dist: float):
+        """
+        Construct geometric graph with a new distance
+        :param dist: new distance, in meters
+        """
+        if dist < 0:
             raise ValueError("distance should be non-negative")
 
-        grid = self._make_grid(distance)
+        self._distance = dist
+        self._add_edges_in_grid(self._make_grid())  # TODO: fix
 
-
-        self._distance = distance
-
-    def _make_grid(self, distance: float) -> Grid:
+    def _make_grid(self) -> Dict[Tuple, Set]:
         """
         Helper method for ``construct_graph``. Makes a grid of stations
         such that each pair of points within a cell is less than ``distance`` away.
         """
-        cell_length = CELL_FACTOR*distance
-        grid: BicingGraph.Grid = {}
-        for index, node in self.nodes(data=True):
-            lat_index: int = int((node['lat'] - self._bottom_left.lat)/cell_length)
-            lon_index: int = int((node['lon'] - self._bottom_left.lon)/cell_length)
-            cell_index = (lat_index, lon_index)
-            grid.setdefault(cell_index, set()).add(index)
+        cell_length = CELL_FACTOR*self._distance
+        grid = {}
+        for node in self.nodes:
+            lat_index = int((node.lat - self._bottom_left.lat)/cell_length)
+            lon_index = int((node.lon - self._bottom_left.lon)/cell_length)
+            grid.setdefault((lat_index, lon_index), set()).add(node)
 
         return grid
 
-    def _draw_edges(self, grid: Grid):
+    def _add_edges_in_grid(self, grid: Dict[Tuple, Set]):
         """
-        Helper method for ``construct_graph``. Draws edges among neighbouring
+        Helper method for ``construct_graph``. Adds edges among neighbouring
         nodes in a pre-constructed grid.
         """
-        raise NotImplementedError
+        def neighbours(cell_idx: Tuple):
+            i, j = cell_idx
+            indices = ((i + di, j + dj) for di in (0, -1, 1) for dj in (0, -1, 1))
+            next(indices)  # discard (i + 0, j + 0)
+            return indices
 
+        for index, cell in grid.items():
+            # add every edge in the Cartesian product cell x cell
+            self.add_edges_from((a, b) for a in cell for b in cell if a is not b)
+            # connect neighbours:
+            for neighbour_index in neighbours(index):
+                neighbour = grid.get(neighbour_index, tuple())  # default is empty cell
+                self.add_edges_from((a, b) for a in cell for b in neighbour
+                                    if distance(a, b) <= self._distance)
+            # mark cell as empty (to avoid repeated calculations)
+            cell.clear()
+
+
+def distance(station1: StationWrapper, station2: StationWrapper) -> float:
+    """Utility for the distance between two stations, in meters"""
+    return haversine(tuple(station1.coord), tuple(station2.coord), unit=Unit.METERS)

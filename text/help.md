@@ -1,26 +1,26 @@
-This is BCNBicingBot. Here are the avaliable commands:
+This is BCNBicingBot. Here are the available commands:
 
- - `start` -- initialize a conversation with the bot
+ - /start -- initialize a conversation with the bot
  
- - `help` -- display this help message
+ - /help -- display this help message
  
- - `graph <distance>` --  generate a geometric graph of the 
+ - `/graph <distance>` --  generate a geometric graph of the 
     Bicing stations. Takes a single argument, `<distance>`, 
     the maximum distance between two adjacent nodes, 
-    as a nonnegative real number.
+    as a non-negative real number.
      
- - `nodes` -- display the number of nodes
+ - /nodes -- display the number of nodes
  
- - `edges` -- display the number of edges
+ - /edges -- display the number of edges
  
- - `components` -- display the number of connected components
+ - /components -- display the number of connected components
  
- - `plotgraph` -- send an image with a plot of the current 
+ - /plotgraph -- send an image with a plot of the current 
     graph on the map
  
- - `route <ori>, <dest>` -- plot a route between two stations.
-    The two stations are given as two comma-separated
-    string arguments `<ori>, <dest>`, indicating the street
+ - `/route <origin> <destination>` -- plot a route between two stations.
+    The two stations are given as two space-separated
+    string arguments `<ori> <dest>`, indicating the street
     addresses of each station.
  
- - `authors` -- display the autors of the bot
+ - /authors -- display the authors of the bot

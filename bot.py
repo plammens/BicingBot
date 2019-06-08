@@ -62,7 +62,7 @@ def help(update: tg.Update, context: tge.CallbackContext):
 
 @cmdhandler()
 def authors(update: tg.Update, context: tge.CallbackContext):
-    update.message.reply_markdown(AUTHORS_TXT)
+    update.message.reply_markdown(AUTHORS_TXT, disable_web_page_preview=True)
 
 
 @cmdhandler()

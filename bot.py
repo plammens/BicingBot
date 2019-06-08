@@ -1,14 +1,10 @@
 import logging
-from traceback import format_exception_only
+from typing import Tuple, Callable
 
 import telegram as tg
 import telegram.ext as tge
 
-from data import *
-
-
-class UsageError(Exception):
-    pass
+import data
 
 
 # ------------------------ Bot initialization ------------------------
@@ -86,8 +82,8 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
 def start(update: tg.Update, context: tge.CallbackContext):
     update.message.reply_markdown(START_TXT)
     chat_data = context.chat_data
-    chat_data['stations'] = fetch_stations()
-    chat_data['graph'] = BicingGraph.from_dataframe(chat_data['stations'])
+    chat_data['stations'] = data.fetch_stations()
+    chat_data['graph'] = data.BicingGraph.from_dataframe(chat_data['stations'])
 
 
 @cmdhandler()

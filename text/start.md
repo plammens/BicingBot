@@ -1,1 +1,3 @@
-Hi, I'm [@BCNBicingBot](https://t.me/BCNBicingBot)!  Run /help to see a list of available commands.
+Initializing session...  
+
+Run /help to see a list of available commands.

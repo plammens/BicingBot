@@ -1,4 +1,4 @@
-This is BCNBicingBot. Here are the available commands:
+Hi, I'm [@BCNBicingBot](https://t.me/BCNBicingBot)! Here are the available commands:
 
  - /start -- initialize a conversation with the bot
  

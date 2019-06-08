@@ -12,7 +12,7 @@ _GRID_SQUARE_SCALE_FACTOR = math.sqrt(2)/2
 _URL = 'https://api.bsmsa.eu/ext/api/bsm/gbfs/v2/en/station_information'
 
 
-def fetch_data() -> pd.DataFrame:
+def fetch_stations() -> pd.DataFrame:
     """Fetches Bicing station data from the official database URL"""
     json_data = pd.read_json(_URL)
     return pd.DataFrame.from_records(data=json_data.data.stations, index='station_id')

@@ -4,12 +4,36 @@ from traceback import format_exception_only
 import telegram as tg
 import telegram.ext as tge
 
-with open('token.txt') as token_file:
-    TOKEN: str = token_file.read().strip()
+from data import *
 
+
+def load_text(name: str) -> str:
+    """
+    Utility to read and return the entire contents of a text file. Searches the
+    `text` sub-folder first and then the root working directory.
+    :param name: name of the text file
+    """
+    for prefix in ('text', '.'):
+        for extension in ('md', 'txt', ''):
+            try:
+                with open(f'{prefix}/{name}.{extension}', 'r') as text_file:
+                    return text_file.read().strip()
+            except FileNotFoundError:
+                continue
+    raise FileNotFoundError(f'could not find `{name}` text file')
+
+
+# Construct bot objects
+TOKEN: str = load_text('token')
 UPDATER = tge.Updater(token=TOKEN, use_context=True)
 DISPATCHER = UPDATER.dispatcher
 BOT = UPDATER.bot
+
+# Load text files:
+START_TXT: str = load_text('start')
+HELP_TXT: str = load_text('help')
+AUTHORS_TXT: str = load_text('authors')
+ERROR_TXT: str = load_text('error')
 
 
 def cmdhandler(command: str = None, **handler_kwargs) -> callable:
@@ -49,6 +73,8 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
 
     return decorator
 
+
+# ------------ Command handlers ------------
 
 @cmdhandler()
 def start(update: tg.Update, context: tge.CallbackContext):
@@ -95,23 +121,13 @@ def plotgraph(update: tg.Update, context: tge.CallbackContext):
     raise NotImplementedError
 
 
+# -------- Main entry point --------
+
 def start_bot():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                         level=logging.INFO)
     UPDATER.start_polling()
     logging.info('bot online')
-
-
-def load_text(name) -> str:
-    with open(f'text/{name}.md', 'r') as text_file:
-        return text_file.read().strip()
-
-
-# Load text files:
-START_TXT: str = load_text('start')
-HELP_TXT: str = load_text('help')
-AUTHORS_TXT: str = load_text('authors')
-ERROR_TXT: str = load_text('error')
 
 
 # Main entry point if run as script:

@@ -1,3 +1,4 @@
+import logging
 from traceback import format_exception_only
 
 import telegram as tg
@@ -93,23 +94,22 @@ def plotgraph(update: tg.Update, context: tge.CallbackContext):
 
 
 def start_bot():
-    import logging
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                        level=logging.INFO)
-
+                        level=logging.DEBUG)
     UPDATER.start_polling()
+    logging.info('bot online')
 
 
-START_TXT: str
-HELP_TXT: str
-AUTHORS_TXT: str
-ERROR_TXT: str
+def load_text(name) -> str:
+    with open(f'text/{name}.md', 'r') as text_file:
+        return text_file.read().strip()
+
 
 # Load text files:
-for text_name in ('start', 'help', 'authors', 'error'):
-    text_var = '{}_TXT'.format(text_name.upper())
-    with open('text/{}.md'.format(text_name), 'r') as text_file:
-        globals()[text_var] = text_file.read().strip()
+START_TXT: str = load_text('start')
+HELP_TXT: str = load_text('help')
+AUTHORS_TXT: str = load_text('authors')
+ERROR_TXT: str = load_text('error')
 
 
 # Main entry point if run as script:

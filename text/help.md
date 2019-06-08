@@ -1,4 +1,4 @@
-This is BCNBicingBot. Here are the avaliable commands:
+This is BCNBicingBot. Here are the available commands:
 
  - `start` -- initialize a conversation with the bot
  
@@ -23,4 +23,4 @@ This is BCNBicingBot. Here are the avaliable commands:
     string arguments `<ori>, <dest>`, indicating the street
     addresses of each station.
  
- - `authors` -- display the autors of the bot
+ - `authors` -- display the authors of the bot

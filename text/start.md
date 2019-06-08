@@ -1,1 +1,1 @@
-Hi!
+Hi, I'm [@BCNBicingBot](https://t.me/BCNBicingBot)!  Run `/help` to see a list of available commands.

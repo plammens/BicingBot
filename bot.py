@@ -130,6 +130,12 @@ def plotgraph(update: tg.Update, context: tge.CallbackContext):
     raise NotImplementedError
 
 
+@cmdhandler()
+def reset(update: tg.Update, context: tge.CallbackContext):
+    context.chat_data.clear()
+    update.message.reply_markdown(OK_TXT)
+
+
 # ------------------------ Other utilities ------------------------
 
 class UsageError(Exception):

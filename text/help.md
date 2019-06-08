@@ -22,5 +22,7 @@ Hi, I'm [@BCNBicingBot](https://t.me/BCNBicingBot)! Here are the available comma
     The two stations are given as two space-separated
     string arguments `<ori> <dest>`, indicating the street
     addresses of each station.
+    
+ - /reset -- clear any stored data (to start from scratch)
  
  - /authors -- display the authors of the bot

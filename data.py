@@ -58,7 +58,7 @@ class BicingGraph(nx.Graph):
     def __init__(self, stations: Iterable, **attr):
         super().__init__(**attr)
         self.add_nodes_from(stations)
-        self._distance = None
+        self._distance: float = 0.0
 
     @staticmethod
     def from_dataframe(stations: pd.DataFrame, **kwargs) -> 'BicingGraph':
@@ -87,13 +87,17 @@ class BicingGraph(nx.Graph):
         if dist < 0:
             raise ValueError("distance should be non-negative")
 
+        self.remove_edges_from(list(self.edges))  # No method to clear all edges in networkx's API
+        self._add_edges_in_grid(_DistanceGrid(self.nodes, dist), dist)
         self._distance = dist
-        self._add_edges_in_grid(_DistanceGrid(self.nodes, self._distance))
 
-    def _add_edges_in_grid(self, grid: '_DistanceGrid'):
+    def _add_edges_in_grid(self, grid: '_DistanceGrid', dist: float):
         """
         Helper method for ``construct_graph``. Adds edges among neighbouring
         nodes in a pre-constructed grid.
+        :param grid: grid such that within each cell all nodes are within `dist`
+        meters apart
+        :param dist: distance
         """
 
         def neighbours(cell_idx: Tuple):
@@ -110,7 +114,7 @@ class BicingGraph(nx.Graph):
             for neighbour_index in neighbours(index):
                 neighbour = grid_dict.get(neighbour_index, tuple())  # default is empty cell
                 self.add_edges_from((a, b) for a in cell for b in neighbour
-                                    if distance(a, b) <= self._distance)
+                                    if distance(a, b) <= dist)
             # mark cell as empty (to avoid repeated computations)
             cell.clear()
 

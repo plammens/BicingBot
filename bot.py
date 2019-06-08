@@ -36,10 +36,12 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
 
         def decorated(update: tg.Update, context: tge.CallbackContext, *args, **kwargs):
             try:
-                return callback(update, context, *args, **kwargs)
+                callback(update, context, *args, **kwargs)
+                logging.info(f'served /{command} @ {update.effective_chat.id}')
             except Exception as e:
                 text = ERROR_TXT + "\n\n`{}`".format(format_exception_only(type(e), e)[0])
                 update.message.reply_markdown(text)
+                logging.info(f'/{command} @ {update.effective_chat.id} raised exception')
 
         handler = tge.CommandHandler(command, decorated, **handler_kwargs)
         DISPATCHER.add_handler(handler)
@@ -95,7 +97,7 @@ def plotgraph(update: tg.Update, context: tge.CallbackContext):
 
 def start_bot():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                        level=logging.DEBUG)
+                        level=logging.INFO)
     UPDATER.start_polling()
     logging.info('bot online')
 

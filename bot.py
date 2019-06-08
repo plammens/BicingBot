@@ -7,6 +7,12 @@ import telegram.ext as tge
 from data import *
 
 
+class UsageError(Exception):
+    pass
+
+
+# ------------------------ Bot initialization ------------------------
+
 def load_text(name: str) -> str:
     """
     Utility to read and return the entire contents of a text file. Searches the
@@ -35,6 +41,8 @@ HELP_TXT: str = load_text('help')
 AUTHORS_TXT: str = load_text('authors')
 ERROR_TXT: str = load_text('error')
 
+
+# ------------------------ Command handlers ------------------------
 
 def cmdhandler(command: str = None, **handler_kwargs) -> callable:
     """
@@ -74,11 +82,12 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
     return decorator
 
 
-# ------------ Command handlers ------------
-
 @cmdhandler()
 def start(update: tg.Update, context: tge.CallbackContext):
     update.message.reply_markdown(START_TXT)
+    chat_data = context.chat_data
+    chat_data['stations'] = fetch_stations()
+    chat_data['graph'] = BicingGraph.from_dataframe(chat_data['stations'])
 
 
 @cmdhandler()
@@ -121,7 +130,7 @@ def plotgraph(update: tg.Update, context: tge.CallbackContext):
     raise NotImplementedError
 
 
-# -------- Main entry point --------
+# ------------------------ Main entry point ------------------------
 
 def start_bot():
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

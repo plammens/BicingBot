@@ -67,7 +67,7 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
                 callback(update, context, *args, **kwargs)
                 logging.info(f'served /{command} @ {update.effective_chat.id}')
             except Exception as e:
-                text = ERROR_TXT + "\n\n`{}`".format(format_exception_only(type(e), e)[0])
+                text = ERROR_TXT + f"\n\n{format_exception_for_message(e)}"
                 update.message.reply_markdown(text)
                 logging.info(f'/{command} @ {update.effective_chat.id} raised exception')
 
@@ -124,6 +124,33 @@ def route(update: tg.Update, context: tge.CallbackContext):
 @cmdhandler()
 def plotgraph(update: tg.Update, context: tge.CallbackContext):
     raise NotImplementedError
+
+
+# ------------------------ Other utilities ------------------------
+
+class UsageError(Exception):
+    pass
+
+
+def format_exception_for_message(exception) -> str:
+    assert isinstance(exception, Exception)
+    msg = f'`{type(exception).__name__}`'
+    if exception.args:
+        msg += '`:` {}'.format(' '.join(exception.args))
+    return msg
+
+
+def get_graph(context: tge.CallbackContext) -> data.BicingGraph:
+    if not context.chat_data.get('graph', None):
+        raise UsageError(f'graph not initialized yet (do so with /start)')
+    return context.chat_data['graph']
+
+
+def get_args(context: tge.CallbackContext, types: Tuple[Callable]) -> Tuple:
+    args = context.args
+    if len(args) != len(types):
+        raise UsageError(f'invalid number of arguments ({len(args)}, expected {len(types)})')
+    return tuple(t(arg) for t, arg in zip(types, args))
 
 
 # ------------------------ Main entry point ------------------------

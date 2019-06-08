@@ -35,6 +35,7 @@ BOT = UPDATER.bot
 START_TXT: str = load_text('start')
 HELP_TXT: str = load_text('help')
 AUTHORS_TXT: str = load_text('authors')
+OK_TXT: str = load_text('ok')
 ERROR_TXT: str = load_text('error')
 
 
@@ -96,9 +97,12 @@ def authors(update: tg.Update, context: tge.CallbackContext):
     update.message.reply_markdown(AUTHORS_TXT, disable_web_page_preview=True)
 
 
-@cmdhandler()
-def graph(update: tg.Update, context: tge.CallbackContext):
-    raise NotImplementedError
+@cmdhandler(command='graph')
+def make_graph(update: tg.Update, context: tge.CallbackContext):
+    distance, = get_args(context, types=(float,))
+    graph = get_graph(context)
+    graph.construct_graph(distance)
+    update.message.reply_markdown(OK_TXT)
 
 
 @cmdhandler()

@@ -150,7 +150,8 @@ def format_exception_for_message(exception) -> str:
     assert isinstance(exception, Exception)
     msg = f'`{type(exception).__name__}`'
     if exception.args:
-        msg += '`:` {}'.format(' '.join(exception.args))
+        msg += '`:` {}'.format(' '.join(arg if isinstance(arg, str) else f'`{arg}`'
+                                        for arg in exception.args))
     return msg
 
 

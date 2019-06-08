@@ -120,7 +120,8 @@ def edges(update: tg.Update, context: tge.CallbackContext):
 
 @cmdhandler()
 def components(update: tg.Update, context: tge.CallbackContext):
-    raise NotImplementedError
+    graph = get_graph(context)
+    update.message.reply_text(graph.components)
 
 
 @cmdhandler()

@@ -79,6 +79,10 @@ class BicingGraph(nx.Graph):
         self.construct_graph(dist=value)
         self._distance = value
 
+    @property
+    def components(self) -> int:
+        return nx.algorithms.number_connected_components(self)
+
     def construct_graph(self, dist: float):
         """
         Construct geometric graph with a new distance

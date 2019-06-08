@@ -64,13 +64,16 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
         command = command or callback.__name__
 
         def decorated(update: tg.Update, context: tge.CallbackContext, *args, **kwargs):
+            id = update.effective_chat.id
             try:
                 callback(update, context, *args, **kwargs)
-                logging.info(f'served /{command} @ {update.effective_chat.id}')
             except Exception as e:
                 text = ERROR_TXT + f"\n\n{format_exception_for_message(e)}"
                 update.message.reply_markdown(text)
-                logging.info(f'/{command} @ {update.effective_chat.id} raised exception')
+                if not isinstance(e, (UsageError, ValueError, TypeError)):
+                    logging.error(f'/{command}@{id}: unexpected exception', exc_info=e)
+            finally:
+                logging.info(f'served /{command}@{id}')
 
         handler = tge.CommandHandler(command, decorated, **handler_kwargs)
         DISPATCHER.add_handler(handler)

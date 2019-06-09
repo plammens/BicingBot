@@ -32,6 +32,16 @@ class Coordinate:
         yield self.lat
         yield self.lon
 
+    def __reversed__(self):
+        yield self.lon
+        yield self.lat
+
+    def __repr__(self):
+        return f'({self.lat}, {self.lon})'
+
+    def __str__(self):
+        return f'({self.lat}º N, {self.lon}º E)'
+
 
 class StationWrapper:
     """

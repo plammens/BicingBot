@@ -20,6 +20,7 @@ def fetch_stations() -> pd.DataFrame:
 
 class Coordinate:
     """Represents a geographical coordinate."""
+    __slots__ = 'lat', 'lon'
     lat: float  # latitude
     lon: float  # longitude
 

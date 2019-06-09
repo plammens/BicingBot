@@ -36,7 +36,8 @@ START_TXT: str = load_text('start')
 HELP_TXT: str = load_text('help')
 AUTHORS_TXT: str = load_text('authors')
 OK_TXT: str = load_text('ok')
-ERROR_TXT: str = load_text('error')
+USAGE_ERROR_TXT: str = load_text('usage-error')
+INTERNAL_ERROR_TXT: str = load_text('internal-error')
 
 
 # ------------------------ Command handlers ------------------------
@@ -64,16 +65,19 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
         command = command or callback.__name__
 
         def decorated(update: tg.Update, context: tge.CallbackContext, *args, **kwargs):
-            id = update.effective_chat.id
+            chat_id = update.effective_chat.id
             try:
                 callback(update, context, *args, **kwargs)
-            except Exception as e:
-                text = ERROR_TXT + f"\n\n{format_exception_for_message(e)}"
+            except UsageError as e:
+                text = '\n\n'.join([USAGE_ERROR_TXT, format_exception_md(e),
+                                    'See /help for usage info.'])
                 update.message.reply_markdown(text)
-                if not isinstance(e, UsageError):
-                    logging.error(f'/{command}@{id}: unexpected exception', exc_info=e)
+            except Exception as e:
+                text = '\n\n'.join([INTERNAL_ERROR_TXT, format_exception_md(e)])
+                update.message.reply_markdown(text)
+                logging.error(f'/{command}@{chat_id}: unexpected exception', exc_info=e)
             finally:
-                logging.info(f'served /{command}@{id}')
+                logging.info(f'served /{command}@{chat_id}')
 
         handler = tge.CommandHandler(command, decorated, **handler_kwargs)
         DISPATCHER.add_handler(handler)
@@ -154,7 +158,8 @@ class ArgCountError(UsageError):
     pass
 
 
-def format_exception_for_message(exception) -> str:
+def format_exception_md(exception) -> str:
+    """Format a markdown string from an exception, to be sent through Telegram"""
     assert isinstance(exception, Exception)
     msg = f'`{type(exception).__name__}`'
     if exception.args:
@@ -164,12 +169,15 @@ def format_exception_for_message(exception) -> str:
 
 
 def get_graph(context: tge.CallbackContext) -> data.BicingGraph:
-    if not context.chat_data.get('graph', None):
+    """Checks if the current chat session has a stored graph and returns it"""
+    try:
+        return context.chat_data['graph']
+    except KeyError:
         raise UsageError(f'graph not initialized yet (do so with /start)')
-    return context.chat_data['graph']
 
 
 def get_args(context: tge.CallbackContext, types: Tuple[Tuple[str, callable], ...]) -> Tuple:
+    """Checks and converts Telegram command arguments"""
     raw_args = context.args
     if len(raw_args) != len(types):
         raise ArgCountError(f'invalid number of arguments ({len(raw_args)}, expected {len(types)})')

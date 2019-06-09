@@ -66,19 +66,22 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
         command = command or callback.__name__
 
         def decorated(update: tg.Update, context: tge.CallbackContext, *args, **kwargs):
-            chat_id = update.effective_chat.id
+            command_info = f'/{command}@{update.effective_chat.id}'
+            logging.debug(f'entering {command_info}')
             try:
                 callback(update, context, *args, **kwargs)
+                logging.info(f'served {command_info}')
             except UsageError as e:
                 text = '\n\n'.join([USAGE_ERROR_TXT, format_exception_md(e),
                                     'See /help for usage info.'])
                 update.message.reply_markdown(text)
+                logging.info(f'served {command_info} (usage error)')
             except Exception as e:
                 text = '\n\n'.join([INTERNAL_ERROR_TXT, format_exception_md(e)])
                 update.message.reply_markdown(text)
-                logging.error(f'/{command}@{chat_id}: unexpected exception', exc_info=e)
+                logging.error(f'{command_info}: unexpected exception', exc_info=e)
             finally:
-                logging.info(f'served /{command}@{chat_id}')
+                logging.debug(f'exiting {command_info}')
 
         handler = tge.CommandHandler(command, decorated, **handler_kwargs)
         DISPATCHER.add_handler(handler)
@@ -170,9 +173,9 @@ def format_exception_md(exception) -> str:
     """Format a markdown string from an exception, to be sent through Telegram"""
     assert isinstance(exception, Exception)
     msg = f'`{type(exception).__name__}`'
-    if exception.args:
-        msg += '`:` {}'.format(' '.join(arg if isinstance(arg, str) else f'`{arg}`'
-                                        for arg in exception.args))
+    extra = str(exception)
+    if extra:
+        msg += f'`:` {extra}'
     return msg
 
 

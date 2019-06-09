@@ -114,12 +114,14 @@ def make_graph(update: tg.Update, context: tge.CallbackContext):
 
 @cmdhandler()
 def nodes(update: tg.Update, context: tge.CallbackContext):
-    raise NotImplementedError
+    graph = get_graph(context)
+    update.message.reply_text(graph.number_of_nodes())
 
 
 @cmdhandler()
 def edges(update: tg.Update, context: tge.CallbackContext):
-    raise NotImplementedError
+    graph = get_graph(context)
+    update.message.reply_text(graph.number_of_edges())
 
 
 @cmdhandler()

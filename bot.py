@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple, Callable
+from typing import Tuple
 
 import telegram as tg
 import telegram.ext as tge
@@ -103,7 +103,7 @@ def authors(update: tg.Update, context: tge.CallbackContext):
 @cmdhandler(command='graph')
 def make_graph(update: tg.Update, context: tge.CallbackContext):
     graph = get_graph(context)
-    distance, = get_args(context, types=(float,))
+    distance, = get_args(context, types=(('distance', float),))
     graph.construct_graph(distance)
     update.message.reply_markdown(OK_TXT)
 
@@ -161,11 +161,18 @@ def get_graph(context: tge.CallbackContext) -> data.BicingGraph:
     return context.chat_data['graph']
 
 
-def get_args(context: tge.CallbackContext, types: Tuple[Callable]) -> Tuple:
-    args = context.args
-    if len(args) != len(types):
-        raise UsageError(f'invalid number of arguments ({len(args)}, expected {len(types)})')
-    return tuple(t(arg) for t, arg in zip(types, args))
+def get_args(context: tge.CallbackContext, types: Tuple[Tuple[str, callable], ...]) -> Tuple:
+    raw_args = context.args
+    if len(raw_args) != len(types):
+        raise UsageError(f'invalid number of arguments ({len(raw_args)}, expected {len(types)})')
+    args = []
+    try:
+        for arg, (name, typ) in zip(raw_args, types):
+            args.append(typ(arg))
+    except ValueError:
+        # noinspection PyUnboundLocalVariable
+        raise UsageError(f"invalid literal for '{name}' argument: expected {typ}")
+    return tuple(args)
 
 
 # ------------------------ Main entry point ------------------------

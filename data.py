@@ -3,13 +3,17 @@ from typing import Dict, Iterable, Set, Tuple
 import math
 import networkx as nx
 import pandas as pd
+import staticmap as sm
 from haversine import haversine, Unit
 from haversine.haversine import _AVG_EARTH_RADIUS_KM
 
 # Constants
 _AVG_EARTH_RADIUS_M = 1000 * _AVG_EARTH_RADIUS_KM
-_GRID_SQUARE_SCALE_FACTOR = math.sqrt(2)/2
+_GRID_SQUARE_SCALE_FACTOR = math.sqrt(2) / 2
+
 _URL = 'https://api.bsmsa.eu/ext/api/bsm/gbfs/v2/en/station_information'
+
+_NODE_SCALE_FACTOR: float = 5 / 800
 
 
 def fetch_stations() -> pd.DataFrame:
@@ -31,10 +35,6 @@ class Coordinate:
     def __iter__(self):
         yield self.lat
         yield self.lon
-
-    def __reversed__(self):
-        yield self.lon
-        yield self.lat
 
     def __repr__(self):
         return f'({self.lat}, {self.lon})'
@@ -132,6 +132,22 @@ class BicingGraph(nx.Graph):
                                     if distance(a, b) <= dist)
             # mark cell as empty (to avoid repeated computations)
             cell.clear()
+
+    def plot(self, size: int = 800, node_col='blue', edge_col='purple'):
+        """Return a static map of BCN with edges between stations drawn in red"""
+        static_map = sm.StaticMap(size, size, padding_x=20, padding_y=20)
+        node_size: int = max(3, int(_NODE_SCALE_FACTOR * size))
+        edge_width: int = max(2, node_size - 2)
+
+        def circle_marker(node) -> sm.CircleMarker:
+            return sm.CircleMarker((node.lon, node.lat), node_col, node_size)
+
+        def line(u, v) -> sm.Line:
+            return sm.Line([(u.lon, u.lat), (v.lon, v.lat)], edge_col, edge_width)
+
+        static_map.markers.extend(circle_marker(u) for u in self.nodes)
+        static_map.lines.extend(line(u, v) for u, v in self.edges)
+        return static_map.render()
 
 
 class _DistanceGrid:

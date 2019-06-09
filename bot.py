@@ -70,7 +70,7 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
             except Exception as e:
                 text = ERROR_TXT + f"\n\n{format_exception_for_message(e)}"
                 update.message.reply_markdown(text)
-                if not isinstance(e, (UsageError, ValueError, TypeError)):
+                if not isinstance(e, UsageError):
                     logging.error(f'/{command}@{id}: unexpected exception', exc_info=e)
             finally:
                 logging.info(f'served /{command}@{id}')
@@ -146,6 +146,14 @@ class UsageError(Exception):
     pass
 
 
+class ArgValueError(UsageError, ValueError):
+    pass
+
+
+class ArgCountError(UsageError):
+    pass
+
+
 def format_exception_for_message(exception) -> str:
     assert isinstance(exception, Exception)
     msg = f'`{type(exception).__name__}`'
@@ -164,14 +172,15 @@ def get_graph(context: tge.CallbackContext) -> data.BicingGraph:
 def get_args(context: tge.CallbackContext, types: Tuple[Tuple[str, callable], ...]) -> Tuple:
     raw_args = context.args
     if len(raw_args) != len(types):
-        raise UsageError(f'invalid number of arguments ({len(raw_args)}, expected {len(types)})')
+        raise ArgCountError(f'invalid number of arguments ({len(raw_args)}, expected {len(types)})')
     args = []
     try:
         for arg, (name, typ) in zip(raw_args, types):
             args.append(typ(arg))
     except ValueError:
         # noinspection PyUnboundLocalVariable
-        raise UsageError(f"invalid literal for '{name}' argument: expected {typ}")
+        raise ArgValueError(f"invalid literal for `{name}` argument: "
+                            f"expected `{typ.__name__}`, got `'{arg}'`")
     return tuple(args)
 
 

@@ -102,8 +102,8 @@ def authors(update: tg.Update, context: tge.CallbackContext):
 
 @cmdhandler(command='graph')
 def make_graph(update: tg.Update, context: tge.CallbackContext):
-    distance, = get_args(context, types=(float,))
     graph = get_graph(context)
+    distance, = get_args(context, types=(float,))
     graph.construct_graph(distance)
     update.message.reply_markdown(OK_TXT)
 

@@ -1,3 +1,4 @@
+import io
 import logging
 from typing import Tuple
 
@@ -137,7 +138,12 @@ def route(update: tg.Update, context: tge.CallbackContext):
 
 @cmdhandler()
 def plotgraph(update: tg.Update, context: tge.CallbackContext):
-    raise NotImplementedError
+    graph = get_graph(context)
+    image = graph.plot()
+    image_bytes = io.BytesIO()
+    image.save(image_bytes, 'JPEG')
+    image_bytes.seek(0)
+    update.message.reply_photo(photo=image_bytes)
 
 
 @cmdhandler()

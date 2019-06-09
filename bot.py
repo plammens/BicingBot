@@ -1,3 +1,4 @@
+import argparse
 import io
 import logging
 from typing import Tuple
@@ -205,13 +206,17 @@ def get_args(context: tge.CallbackContext, types: Tuple[Tuple[str, callable], ..
 
 # ------------------------ Main entry point ------------------------
 
-def start_bot():
+def start_bot(logging_level: str):
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                        level=logging.INFO)
+                        level=logging_level)
     UPDATER.start_polling()
     logging.info('bot online')
 
 
 # Main entry point if run as script:
 if __name__ == '__main__':
-    start_bot()
+    parser = argparse.ArgumentParser(description="Start the BCNBicingBot.")
+    parser.add_argument('--logging-level', '-l', action='store', default='INFO', dest='level',
+                        type=lambda s: s.upper(), choices=['INFO', 'DEBUG'], help='logging level')
+    args = parser.parse_args()
+    start_bot(args.level)

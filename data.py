@@ -4,7 +4,7 @@ import math
 import networkx as nx
 import pandas as pd
 import staticmap as sm
-from haversine import haversine, Unit
+from haversine import Unit, haversine
 from haversine.haversine import _AVG_EARTH_RADIUS_KM
 
 # Constants
@@ -71,10 +71,10 @@ class BicingGraph(nx.Graph):
         self.add_nodes_from(stations)
         self._distance: float = 0.0
 
-    @staticmethod
-    def from_dataframe(stations: pd.DataFrame, **kwargs) -> 'BicingGraph':
+    @classmethod
+    def from_dataframe(cls, stations: pd.DataFrame, **kwargs) -> 'BicingGraph':
         rows = stations.itertuples(name='Station')
-        return BicingGraph(tuple(map(StationWrapper, rows)), **kwargs)
+        return cls(tuple(map(StationWrapper, rows)), **kwargs)
 
     @property
     def distance(self):
@@ -102,8 +102,9 @@ class BicingGraph(nx.Graph):
         if dist < 0:
             raise ValueError("distance should be non-negative")
 
-        self.remove_edges_from(list(self.edges))  # No method to clear all edges in networkx's API
-        self._add_edges_in_grid(_DistanceGrid(self.nodes, dist), dist)
+        self.remove_edges_from(tuple(self.edges))  # No method to clear all edges in networkx's API
+        if dist > 0:
+            self._add_edges_in_grid(_DistanceGrid(self.nodes, dist), dist)
         self._distance = dist
 
     def _add_edges_in_grid(self, grid: '_DistanceGrid', dist: float):

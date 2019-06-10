@@ -102,13 +102,13 @@ def start(update: tg.Update, context: tge.CallbackContext):
     chat_data['graph'] = data.BicingGraph.from_dataframe(chat_data['stations'])
 
 
-@cmdhandler()
-def help(update: tg.Update, context: tge.CallbackContext):
+@cmdhandler(command='help')
+def help_cmd(update: tg.Update, _: tge.CallbackContext):
     update.message.reply_markdown(HELP_TXT)
 
 
 @cmdhandler()
-def authors(update: tg.Update, context: tge.CallbackContext):
+def authors(update: tg.Update, _: tge.CallbackContext):
     update.message.reply_markdown(AUTHORS_TXT, disable_web_page_preview=True)
 
 
@@ -221,5 +221,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Start the BCNBicingBot.")
     parser.add_argument('--logging-level', '-l', action='store', default='INFO', dest='level',
                         type=lambda s: s.upper(), choices=['INFO', 'DEBUG'], help='logging level')
-    args = parser.parse_args()
-    start_bot(args.level)
+    command_line_args = parser.parse_args()
+    start_bot(command_line_args.level)

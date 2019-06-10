@@ -1,5 +1,6 @@
 import argparse
 import io
+import itertools
 import logging
 from typing import Callable, Tuple
 
@@ -94,12 +95,40 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
     return decorator
 
 
+def progress(callback: CommandCallbackType) -> CommandCallbackType:
+    """
+    Decorator to show a "loading" message during a command handler callback
+    :param callback: command callback to decorate (context-based)
+    """
+
+    def decorated(update: tg.Update, context: tge.CallbackContext):
+        prompt_gen = itertools.cycle('Processing{:<3} ⏱'.format('.'*i) for i in range(4))
+        progress_message: tg.Message = update.message.reply_text(next(prompt_gen))
+
+        def progress_job_callback(_: tge.CallbackContext):
+            try:
+                progress_message.edit_text(next(prompt_gen))
+            except tg.error.BadRequest:
+                pass  # ignore if already deleted
+
+        job: tge.Job = context.job_queue.run_repeating(progress_job_callback, 0.5)
+        callback(update, context)
+        job.schedule_removal()
+        progress_message.delete()
+
+    decorated.__name__ = callback.__name__  # to work with cmdhandler decorator defaults
+    return decorated
+
+
+# ------------------------ Command handlers ------------------------
+
 @cmdhandler()
+@progress
 def start(update: tg.Update, context: tge.CallbackContext):
-    update.message.reply_markdown(START_TXT)
     chat_data = context.chat_data
     chat_data['stations'] = data.fetch_stations()
     chat_data['graph'] = data.BicingGraph.from_dataframe(chat_data['stations'])
+    update.message.reply_markdown(START_TXT)
 
 
 @cmdhandler(command='help')
@@ -144,6 +173,7 @@ def route(update: tg.Update, context: tge.CallbackContext):
 
 
 @cmdhandler()
+@progress
 def plotgraph(update: tg.Update, context: tge.CallbackContext):
     graph = get_graph(context)
     image = graph.plot()

@@ -21,8 +21,8 @@ def load_text(name: str) -> str:
     for prefix in ('text', '.'):
         for extension in ('md', 'txt', ''):
             try:
-                with open(f'{prefix}/{name}.{extension}', 'r') as text_file:
-                    return text_file.read().strip()
+                with open(f'{prefix}/{name}.{extension}', mode='r', encoding='utf-8') as file:
+                    return file.read().strip()
             except FileNotFoundError:
                 continue
     raise FileNotFoundError(f'could not find `{name}` text file')

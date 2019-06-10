@@ -1,7 +1,7 @@
 import argparse
 import io
 import logging
-from typing import Tuple
+from typing import Callable, Tuple
 
 import telegram as tg
 import telegram.ext as tge
@@ -41,8 +41,11 @@ OK_TXT: str = load_text('ok')
 USAGE_ERROR_TXT: str = load_text('usage-error')
 INTERNAL_ERROR_TXT: str = load_text('internal-error')
 
+# ------------------------ Decorators ------------------------
 
-# ------------------------ Command handlers ------------------------
+# type alias for command handler callbacks
+CommandCallbackType = Callable[[tg.Update, tge.CallbackContext], None]
+
 
 def cmdhandler(command: str = None, **handler_kwargs) -> callable:
     """
@@ -62,17 +65,17 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
     """
 
     # Actual decorator
-    def decorator(callback: callable) -> callable:
+    def decorator(callback: CommandCallbackType) -> CommandCallbackType:
         nonlocal command
         command = command or callback.__name__
 
-        def decorated(update: tg.Update, context: tge.CallbackContext, *args, **kwargs):
+        def decorated(update: tg.Update, context: tge.CallbackContext):
             command_info = f'/{command}@{update.effective_chat.id}'
-            logging.debug(f'entering {command_info}')
+            logging.info(f'reached {command_info}')
             try:
-                callback(update, context, *args, **kwargs)
+                callback(update, context)
                 logging.info(f'served {command_info}')
-            except UsageError as e:
+            except (UsageError, ValueError) as e:
                 text = '\n\n'.join([USAGE_ERROR_TXT, format_exception_md(e),
                                     'See /help for usage info.'])
                 update.message.reply_markdown(text)

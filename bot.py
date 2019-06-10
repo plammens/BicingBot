@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import io
 import itertools
 import logging
@@ -41,6 +42,7 @@ AUTHORS_TXT: str = load_text('authors')
 OK_TXT: str = load_text('ok')
 USAGE_ERROR_TXT: str = load_text('usage-error')
 INTERNAL_ERROR_TXT: str = load_text('internal-error')
+STATUS_TXT: str = load_text('status')
 
 # ------------------------ Decorators ------------------------
 
@@ -126,6 +128,7 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
 @progress
 def start(update: tg.Update, context: tge.CallbackContext):
     chat_data = context.chat_data
+    chat_data['last_fetch_time'] = datetime.datetime.now()
     chat_data['stations'] = data.fetch_stations()
     chat_data['graph'] = data.BicingGraph.from_dataframe(chat_data['stations'])
     update.message.reply_markdown(START_TXT)
@@ -139,6 +142,23 @@ def help_cmd(update: tg.Update, _: tge.CallbackContext):
 @cmdhandler()
 def authors(update: tg.Update, _: tge.CallbackContext):
     update.message.reply_markdown(AUTHORS_TXT, disable_web_page_preview=True)
+
+
+@cmdhandler()
+def status(update: tg.Update, context: tge.CallbackContext):
+    chat_data = context.chat_data
+
+    def lines():
+        graph = chat_data.get('graph', None)
+        if graph:
+            yield 'Initialised: `True`'
+            time = chat_data['last_fetch_time'].isoformat(sep=' ', timespec='minutes')
+            yield f"Last fetch time: `{time}`"
+            yield f"Current graph distance: `{graph.distance} m`"
+        else:
+            yield 'Initialised: `False`'
+
+    update.message.reply_markdown('\n'.join([STATUS_TXT, *lines()]))
 
 
 @cmdhandler(command='graph')

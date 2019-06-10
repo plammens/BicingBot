@@ -4,10 +4,9 @@ Hi, I'm [@BCNBicingBot](https://t.me/BCNBicingBot)! Here are the available comma
  
  - /help -- display this help message
  
- - `/graph <distance>` --  generate a geometric graph of the 
-    Bicing stations. Takes a single argument, `<distance>`, 
-    the maximum distance between two adjacent nodes, 
-    as a non-negative real number.
+ - `/graph <distance>` --  generate a geometric graph of the Bicing stations. Takes a single argument, `<distance>`, the maximum distance between two adjacent nodes, as a non-negative real number.
+    
+ - /status -- display information on the session's current status (i.e. last fetch time, current graph distance, etc.)
      
  - /nodes -- display the number of nodes
  
@@ -18,10 +17,7 @@ Hi, I'm [@BCNBicingBot](https://t.me/BCNBicingBot)! Here are the available comma
  - /plotgraph -- send an image with a plot of the current 
     graph on the map
  
- - `/route <origin> <destination>` -- plot a route between two stations.
-    The two stations are given as two space-separated
-    string arguments `<ori> <dest>`, indicating the street
-    addresses of each station.
+ - `/route <origin> <destination>` -- plot a route between two stations. The two stations are given as two space-separated string arguments, `<origin> <destination>`, indicating the street addresses of each station.
     
  - /reset -- clear any stored data (to start from scratch)
  

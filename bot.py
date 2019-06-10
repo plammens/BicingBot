@@ -136,7 +136,7 @@ def start(update: tg.Update, context: tge.CallbackContext):
 
 @cmdhandler(command='help')
 def help_cmd(update: tg.Update, _: tge.CallbackContext):
-    update.message.reply_markdown(HELP_TXT)
+    update.message.reply_markdown(HELP_TXT, disable_web_page_preview=True)
 
 
 @cmdhandler()

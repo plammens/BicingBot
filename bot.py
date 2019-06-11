@@ -121,6 +121,12 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
     decorated.__name__ = callback.__name__  # to work with cmdhandler decorator defaults
     return decorated
 
+def image_message(update: tg.Update, image):
+    image_bytes = io.BytesIO()
+    image.save(image_bytes, 'JPEG')
+    image_bytes.seek(0)
+    update.message.reply_photo(photo=image_bytes)
+
 
 # ------------------------ Command handlers ------------------------
 
@@ -196,22 +202,13 @@ def route(update: tg.Update, context: tge.CallbackContext):
     origin = data.StrToCoordinate(origin)
     destination = data.StrToCoordinate(destination)
 
-    routeImage = graph.route(origin, destination).plot()
-    routeImage_bytes = io.BytesIO()
-    routeImage.save(routeImage_bytes, 'JPEG')
-    routeImage_bytes.seek(0)
-    update.message.reply_photo(photo=routeImage_bytes)
-
+    image_message(update, graph.route(origin, destination).plot())
 
 @cmdhandler()
 @progress
 def plotgraph(update: tg.Update, context: tge.CallbackContext):
     graph = get_graph(context)
-    image = graph.plot()
-    image_bytes = io.BytesIO()
-    image.save(image_bytes, 'JPEG')
-    image_bytes.seek(0)
-    update.message.reply_photo(photo=image_bytes)
+    image_message(update, graph.plot())
 
 
 @cmdhandler()

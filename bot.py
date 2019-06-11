@@ -189,7 +189,18 @@ def components(update: tg.Update, context: tge.CallbackContext):
 
 @cmdhandler()
 def route(update: tg.Update, context: tge.CallbackContext):
-    raise NotImplementedError
+    graph = get_graph(context)
+    context.args = ' '.join(context.args).split(',')
+    origin, destination, = get_args(context, types=(('origin', str), ('destination', str),))
+
+    origin = data.StrToCoordinate(origin)
+    destination = data.StrToCoordinate(destination)
+
+    routeImage = graph.route(origin, destination).plot()
+    routeImage_bytes = io.BytesIO()
+    routeImage.save(routeImage_bytes, 'JPEG')
+    routeImage_bytes.seek(0)
+    update.message.reply_photo(photo=routeImage_bytes)
 
 
 @cmdhandler()

@@ -169,7 +169,7 @@ class BicingGraph(nx.Graph):
         :param destination: Coordinate of the destination.
 
         :return GraphRoute: the graph that contains that contains the optimal path
-        :return duration: (in minuteswith the convention:
+        :return duration: (in seconds) with the convention:
                                 walking average speed: 4 km/h
                                 bycicle riding average speed: 10 km/h
         Idea:

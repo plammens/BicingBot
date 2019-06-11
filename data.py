@@ -4,6 +4,7 @@ import math
 import networkx as nx
 import pandas as pd
 import staticmap as sm
+from geopy.geocoders import Nominatim
 from haversine import Unit, haversine
 from haversine.haversine import _AVG_EARTH_RADIUS_KM
 
@@ -149,6 +150,33 @@ class BicingGraph(nx.Graph):
         static_map.lines.extend(line(u, v) for u, v in self.edges)
         return static_map.render()
 
+    def route(self, origin: Coordinate, destination: Coordinate):
+        '''
+
+        Idea:
+            Firstly take the geometric graph as a template. Then add the
+            origin and destination node, after connects them with a weight of dist*5/2 to
+            all the bicing stations. Finally, computes the path with the minimum
+            weight between origin and destination.
+        '''
+        GraphRoute = self.copy()
+
+        GraphRoute.add_node(origin)
+        GraphRoute.add_node(destination)
+
+        for node in GraphRoute.nodes:
+            GraphRoute.add_edge(origin, node, weight = distance(origin, node)*5/2)
+            GraphRoute.add_edge(destination, node, weight = distance(origin, node)*5/2)
+
+        NodeList = nx.dijkstra_path(GraphRoute, origin, destination)
+
+        GraphRoute = BicingGraph(NodeList)
+
+        for first, second in zip(NodeList, NodeList[1:]):
+            GraphRoute.add_edge(first, second)
+
+        return GraphRoute
+
 
 class _DistanceGrid:
     """
@@ -203,3 +231,9 @@ class _DistanceGrid:
 def distance(station1: StationWrapper, station2: StationWrapper) -> float:
     """Utility for the distance between two stations, in meters"""
     return haversine(tuple(station1.coords), tuple(station2.coords), unit=Unit.METERS)
+
+
+def StrToCoordinate(location: str) -> Coordinate:
+    geolocator = Nominatim(user_agent="BCNBicingBot")
+    locationCoord = geolocator.geocode(location + ', Barcelona')
+    return Coordinate(locationCoord.latitude, locationCoord.longitude)

@@ -10,15 +10,11 @@ from haversine.haversine import _AVG_EARTH_RADIUS_KM
 # Constants
 _AVG_EARTH_RADIUS_M = 1000 * _AVG_EARTH_RADIUS_KM
 
-_URL = 'https://api.bsmsa.eu/ext/api/bsm/gbfs/v2/en/station_information'
+_URL_STATION_INFO = 'https://api.bsmsa.eu/ext/api/bsm/gbfs/v2/en/station_information'
+_URL_STATION_STATUS = 'https://api.bsmsa.eu/ext/api/bsm/gbfs/v2/en/station_status'
+_DATA_COLUMNS = ['lat', 'lon', 'num_bikes_available', 'num_docks_available']
 
 _NODE_SCALE_FACTOR: float = 5 / 800
-
-
-def fetch_stations() -> pd.DataFrame:
-    """Fetches Bicing station data from the official database URL"""
-    json_data = pd.read_json(_URL)
-    return pd.DataFrame.from_records(data=json_data.data.stations, index='station_id')
 
 
 class Coordinate:
@@ -115,9 +111,10 @@ class BicingGraph(nx.Graph):
         :param dist: distance
         """
 
-        def neighbours(cell_idx: Tuple):
+        def neighbours(cell_idx: Tuple[int, int]) -> Iterable[Tuple[int, int]]:
             i, j = cell_idx
-            indices = ((i + di, j + dj) for di in (0, -1, 1) for dj in (0, -1, 1))
+            step_range = (0, -1, 1)
+            indices = ((i + di, j + dj) for di in step_range for dj in step_range)
             next(indices)  # discard (i + 0, j + 0)
             return indices
 
@@ -203,3 +200,16 @@ class _DistanceGrid:
 def distance(station1: StationWrapper, station2: StationWrapper) -> float:
     """Utility for the distance between two stations, in meters"""
     return haversine(tuple(station1.coords), tuple(station2.coords), unit=Unit.METERS)
+
+
+def fetch_stations() -> pd.DataFrame:
+    """Fetches Bicing station data from the official database URL"""
+    info = _fetch_station_data_from_json(_URL_STATION_INFO)
+    status = _fetch_station_data_from_json(_URL_STATION_STATUS)
+    merged = info.join(status, how='inner')
+    return merged[_DATA_COLUMNS]
+
+
+def _fetch_station_data_from_json(url: str) -> pd.DataFrame:
+    json_data = pd.read_json(url).data.stations
+    return pd.DataFrame.from_records(data=json_data, index='station_id')

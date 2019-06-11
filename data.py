@@ -160,12 +160,19 @@ class BicingGraph(nx.Graph):
 
     def route(self, origin: Coordinate, destination: Coordinate):
         '''
+        Function that provides the minimum time route between two coordinates.
+        Considering that the user can only use a bicycle between two nodes with an
+        adjacent edge in the geometric graph. The walking parts are ponderated by a
+        5/2 factor.
+
+        :param origin: Coordinate of the origin.
+        :param destination: Coordinate of the destination.
 
         Idea:
             Firstly take the geometric graph as a template. Then add the
-            origin and destination node, after connects them with a weight of dist*5/2 to
-            all the bicing stations. Finally, computes the path with the minimum
-            weight between origin and destination.
+            origin and destination node, after connects them with a weight of
+            dist*5/2 to all the bicing stations. Finally, computes the path
+            with the minimum weight between origin and destination.
         '''
 
         origin, destination = map(StationWrapper, (origin, destination))
@@ -174,6 +181,8 @@ class BicingGraph(nx.Graph):
 
         GraphRoute.add_node(origin)
         GraphRoute.add_node(destination)
+
+        GraphRoute.add_edge(origin, destination, weight=distance(origin, destination)*5/2)
 
         for node in GraphRoute.nodes:
             GraphRoute.add_edge(origin, node, weight = distance(origin, node)*5/2)

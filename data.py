@@ -9,7 +9,6 @@ from haversine.haversine import _AVG_EARTH_RADIUS_KM
 
 # Constants
 _AVG_EARTH_RADIUS_M = 1000 * _AVG_EARTH_RADIUS_KM
-_GRID_SQUARE_SCALE_FACTOR = math.sqrt(2) / 2
 
 _URL = 'https://api.bsmsa.eu/ext/api/bsm/gbfs/v2/en/station_information'
 
@@ -125,7 +124,7 @@ class BicingGraph(nx.Graph):
         grid_dict = grid.cell_dict
         for index, cell in grid_dict.items():
             # add every edge in the Cartesian product cell x cell
-            self.add_edges_from((a, b) for a in cell for b in cell if a is not b)
+            self.add_edges_from((a, b) for a in cell for b in cell if a is not b and distance(a, b) <= dist)
             # connect neighbours:
             for neighbour_index in neighbours(index):
                 neighbour = grid_dict.get(neighbour_index, tuple())  # default is empty cell
@@ -193,7 +192,7 @@ class _DistanceGrid:
 
         # Scale the distance so that every pair of points in a (planar) square with this
         # side length is at most ``self._distance`` meters apart:
-        side_length = _GRID_SQUARE_SCALE_FACTOR * dist
+        side_length = dist
 
         lat = math.radians(lat)
         latitude_radius = _AVG_EARTH_RADIUS_M * math.cos(lat)

@@ -122,6 +122,10 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
     return decorated
 
 def image_message(update: tg.Update, image):
+    """
+    :param update:
+    :param image:
+    """
     image_bytes = io.BytesIO()
     image.save(image_bytes, 'JPEG')
     image_bytes.seek(0)
@@ -202,7 +206,11 @@ def route(update: tg.Update, context: tge.CallbackContext):
     origin = data.StrToCoordinate(origin)
     destination = data.StrToCoordinate(destination)
 
-    image_message(update, graph.route(origin, destination).plot())
+    G, s = graph.route(origin, destination)
+
+    image_message(update, G.plot())
+    update.message.reply_text(f'Expected time of the route: {datetime.timedelta(seconds = int(s))}')
+
 
 @cmdhandler()
 @progress

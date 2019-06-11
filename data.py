@@ -168,6 +168,10 @@ class BicingGraph(nx.Graph):
         :param origin: Coordinate of the origin.
         :param destination: Coordinate of the destination.
 
+        :return GraphRoute: the graph that contains that contains the optimal path
+        :return duration: (in minuteswith the convention:
+                                walking average speed: 4 km/h
+                                bycicle riding average speed: 10 km/h
         Idea:
             Firstly take the geometric graph as a template. Then add the
             origin and destination node, after connects them with a weight of
@@ -188,14 +192,16 @@ class BicingGraph(nx.Graph):
             GraphRoute.add_edge(origin, node, weight=distance(origin, node) * 5 / 2)
             GraphRoute.add_edge(destination, node, weight=distance(destination, node) * 5 / 2)
 
-        NodeList = nx.dijkstra_path(GraphRoute, origin, destination)
+        d, NodeList = nx.single_source_dijkstra(GraphRoute, origin, destination)
 
         GraphRoute = BicingGraph(NodeList)
 
         for first, second in zip(NodeList, NodeList[1:]):
             GraphRoute.add_edge(first, second)
 
-        return GraphRoute
+        duration = d*9/25
+
+        return GraphRoute, duration
 
 
 class _DistanceGrid:

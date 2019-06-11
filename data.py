@@ -129,7 +129,7 @@ class BicingGraph(nx.Graph):
             for a in cell:
                 for b in cell:
                     if distance(a, b) <= dist:
-                        self.add_edge(a, b, weight = distance(a, b))
+                        self.add_edge(a, b, weight=distance(a, b))
             # connect neighbours:
             for neighbour_index in neighbours(index):
                 neighbour = grid_dict.get(neighbour_index, tuple())  # default is empty cell
@@ -137,7 +137,7 @@ class BicingGraph(nx.Graph):
                 for a in cell:
                     for b in neighbour:
                         if distance(a, b) <= dist:
-                            self.add_edge(a, b, weight = distance(a, b))
+                            self.add_edge(a, b, weight=distance(a, b))
 
             # mark cell as empty (to avoid repeated computations)
             cell.clear()
@@ -159,7 +159,7 @@ class BicingGraph(nx.Graph):
         return static_map.render()
 
     def route(self, origin: Coordinate, destination: Coordinate):
-        '''
+        """
         Function that provides the minimum time route between two coordinates.
         Considering that the user can only use a bicycle between two nodes with an
         adjacent edge in the geometric graph. The walking parts are ponderated by a
@@ -173,7 +173,7 @@ class BicingGraph(nx.Graph):
             origin and destination node, after connects them with a weight of
             dist*5/2 to all the bicing stations. Finally, computes the path
             with the minimum weight between origin and destination.
-        '''
+        """
 
         origin, destination = map(StationWrapper, (origin, destination))
 
@@ -182,11 +182,11 @@ class BicingGraph(nx.Graph):
         GraphRoute.add_node(origin)
         GraphRoute.add_node(destination)
 
-        GraphRoute.add_edge(origin, destination, weight=distance(origin, destination)*5/2)
+        GraphRoute.add_edge(origin, destination, weight=distance(origin, destination) * 5 / 2)
 
         for node in GraphRoute.nodes:
-            GraphRoute.add_edge(origin, node, weight = distance(origin, node)*5/2)
-            GraphRoute.add_edge(destination, node, weight = distance(destination, node)*5/2)
+            GraphRoute.add_edge(origin, node, weight=distance(origin, node) * 5 / 2)
+            GraphRoute.add_edge(destination, node, weight=distance(destination, node) * 5 / 2)
 
         NodeList = nx.dijkstra_path(GraphRoute, origin, destination)
 
@@ -196,6 +196,7 @@ class BicingGraph(nx.Graph):
             GraphRoute.add_edge(first, second)
 
         return GraphRoute
+
 
 class _DistanceGrid:
     """

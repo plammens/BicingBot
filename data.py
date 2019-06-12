@@ -65,6 +65,10 @@ _NODE_SCALE_FACTOR: float = 5 / 800
 _FLOAT_TO_INT_FACTOR: float = 1000.0
 
 
+class BicingGraphUnfeasibleError(nx.NetworkXUnfeasible):
+    pass
+
+
 class BicingGraph(nx.Graph):
     def __init__(self, stations: Iterable = None, **attr):
         super().__init__(**attr)
@@ -224,8 +228,7 @@ class BicingGraph(nx.Graph):
             bikes, free_docks = node.num_bikes_available, node.num_docks_available
             total_docks = bikes + free_docks
             if total_docks < min_bikes + min_free_docks:
-                # TODO: custom exception subclass?
-                raise nx.NetworkXUnfeasible(
+                raise BicingGraphUnfeasibleError(
                     f'cannot satisfy constraints `min_bikes={min_bikes}`, `min_free_docks='
                     f'{min_free_docks}` on a station with `{total_docks}` total docks'
                 )

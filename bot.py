@@ -203,8 +203,8 @@ def route(update: tg.Update, context: tge.CallbackContext):
     context.args = ' '.join(context.args).split(',')
     origin, destination, = get_args(context, types=(('origin', str), ('destination', str),))
 
-    origin = data.StrToCoordinate(origin)
-    destination = data.StrToCoordinate(destination)
+    origin = data.address_to_coord(origin)
+    destination = data.address_to_coord(destination)
 
     G, s = graph.route(origin, destination)
 

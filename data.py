@@ -1,24 +1,16 @@
 import collections
 from typing import Dict, Iterable, Set, Tuple
 
+import geopy
 import math
 import networkx as nx
 import pandas as pd
 import staticmap as sm
-from geopy.geocoders import Nominatim
 from haversine import Unit, haversine
 from haversine.haversine import _AVG_EARTH_RADIUS_KM
 
-# Constants
-_AVG_EARTH_RADIUS_M = 1000 * _AVG_EARTH_RADIUS_KM
 
-_URL_STATION_INFO = 'https://api.bsmsa.eu/ext/api/bsm/gbfs/v2/en/station_information'
-_URL_STATION_STATUS = 'https://api.bsmsa.eu/ext/api/bsm/gbfs/v2/en/station_status'
-_DATA_COLUMNS = ['lat', 'lon', 'num_bikes_available', 'num_docks_available']
-
-_NODE_SCALE_FACTOR: float = 5 / 800
-_FLOAT_TO_INT_FACTOR: float = 1000.0
-
+# ------------------------ Utility classes ------------------------
 
 class Coordinate:
     """Represents a geographical coordinate."""
@@ -63,7 +55,11 @@ class StationWrapper:
         return Coordinate(self.lat, self.lon)
 
 
+# ------------------------ BicingGraph ------------------------
+
 FlowEdge = collections.namedtuple('FlowEdge', ['tail', 'head', 'flow', 'dist'])
+_NODE_SCALE_FACTOR: float = 5 / 800
+_FLOAT_TO_INT_FACTOR: float = 1000.0
 
 
 class BicingGraph(nx.Graph):
@@ -201,7 +197,7 @@ class BicingGraph(nx.Graph):
         for first, second in zip(NodeList, NodeList[1:]):
             GraphRoute.add_edge(first, second)
 
-        duration = d*9/25
+        duration = d * 9 / 25
 
         return GraphRoute, duration
 
@@ -308,7 +304,7 @@ class _DistanceGrid:
         return self._grid
 
     @staticmethod
-    def _get_degree_side_lengths(lat: float, dist: float) -> Tuple[float, float]:
+    def _get_degree_side_lengths(lat: float, dist: float) -> Iterable[float, float]:
         """
         Calculate the (approximate) latitude/longitude degree-increments of the sides of a
         "square" on the earth's surface such that any pair of points within it is at most
@@ -326,8 +322,12 @@ class _DistanceGrid:
 
         lat = math.radians(lat)
         latitude_radius = _AVG_EARTH_RADIUS_M * math.cos(lat)
-        return math.degrees(side_length / _AVG_EARTH_RADIUS_M), \
-               math.degrees(side_length / latitude_radius)
+        return map(lambda r: math.degrees(side_length / r), (_AVG_EARTH_RADIUS_M, latitude_radius))
+
+
+# ------------------------ Computational utils ------------------------
+
+_AVG_EARTH_RADIUS_M = 1000 * _AVG_EARTH_RADIUS_KM
 
 
 def distance(station1: StationWrapper, station2: StationWrapper) -> float:
@@ -335,10 +335,25 @@ def distance(station1: StationWrapper, station2: StationWrapper) -> float:
     return haversine(tuple(station1.coords), tuple(station2.coords), unit=Unit.METERS)
 
 
-def StrToCoordinate(location: str) -> Coordinate:
-    geolocator = Nominatim(user_agent="BCNBicingBot")
-    locationCoord = geolocator.geocode(location + ', Barcelona')
-    return Coordinate(locationCoord.latitude, locationCoord.longitude)
+def ramp(x):
+    """ReLu function; maximum between x and 0
+    :param x: numeric value
+    :return: max{0, x}
+    """
+    return x if x > 0 else 0
+
+
+def address_to_coord(location: str) -> Coordinate:
+    geolocator = geopy.geocoders.Nominatim(user_agent="BCNBicingBot")
+    location_coord = geolocator.geocode(location + ', Barcelona')
+    return Coordinate(location_coord.latitude, location_coord.longitude)
+
+
+# ------------------------ Data fetching utils ------------------------
+
+_URL_STATION_INFO = 'https://api.bsmsa.eu/ext/api/bsm/gbfs/v2/en/station_information'
+_URL_STATION_STATUS = 'https://api.bsmsa.eu/ext/api/bsm/gbfs/v2/en/station_status'
+_DATA_COLUMNS = ['lat', 'lon', 'num_bikes_available', 'num_docks_available']
 
 
 def fetch_stations() -> pd.DataFrame:
@@ -352,11 +367,3 @@ def fetch_stations() -> pd.DataFrame:
 def _fetch_station_data_from_json(url: str) -> pd.DataFrame:
     json_data = pd.read_json(url).data.stations
     return pd.DataFrame.from_records(data=json_data, index='station_id')
-
-
-def ramp(x):
-    """
-    :param x: numeric value
-    :return: max{0, x}
-    """
-    return x if x > 0 else 0

@@ -10,8 +10,7 @@ import telegram.ext as tge
 import data
 
 
-# ------------------------ Bot initialization ------------------------
-
+# --------------------------------------- Bot initialisation ---------------------------------------
 
 def load_text(name: str) -> str:
     """
@@ -44,7 +43,7 @@ USAGE_ERROR_TXT: str = load_text('usage-error')
 INTERNAL_ERROR_TXT: str = load_text('internal-error')
 STATUS_TXT: str = load_text('status')
 
-# ------------------------ Decorators ------------------------
+# --------------------------------------- Decorators  ---------------------------------------
 
 # type alias for command handler callbacks
 CommandCallbackType = Callable[[tg.Update, tge.CallbackContext], None]
@@ -107,11 +106,11 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
         prompt_gen = itertools.cycle('Processing{:<3} ⏱'.format('.' * i) for i in range(4))
         progress_message: tg.Message = update.message.reply_text(next(prompt_gen))
 
-        def progress_job_callback(context: tge.CallbackContext):
+        def progress_job_callback(job_context: tge.CallbackContext):
             try:
                 progress_message.edit_text(next(prompt_gen))
             except tg.error.BadRequest:
-                context.job.schedule_removal()  # shutdown if already deleted
+                job_context.job.schedule_removal()  # shutdown if already deleted
 
         logging.debug(f'adding progress message to {update.effective_chat.id}')
         job: tge.Job = context.job_queue.run_repeating(progress_job_callback, 0.5)
@@ -126,7 +125,7 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
     return decorated
 
 
-# ------------------------ Command handlers ------------------------
+# --------------------------------------- Command handlers ---------------------------------------
 
 @cmdhandler()
 @progress
@@ -239,7 +238,7 @@ def reset(update: tg.Update, context: tge.CallbackContext):
     update.message.reply_markdown(OK_TXT)
 
 
-# ------------------------ Other utilities ------------------------
+# --------------------------------------- Other utilities ---------------------------------------
 
 class UsageError(Exception):
     pass
@@ -299,7 +298,7 @@ def markdown_safe_reply(original_message: tg.Message, reply_txt: str):
         original_message.reply_text(reply_txt)
 
 
-# ------------------------ Main entry point ------------------------
+# --------------------------------------- Main entry point ---------------------------------------
 
 def start_bot(logging_level: str):
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

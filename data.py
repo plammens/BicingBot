@@ -396,9 +396,11 @@ def ramp(x):
     return x if x > 0 else 0
 
 
-def address_to_coord(location: str) -> Coordinate:
+def address_to_coord(address: str) -> Coordinate:
     geolocator = geopy.geocoders.Nominatim(user_agent="BCNBicingBot")
-    location_coord = geolocator.geocode(location + ', Barcelona')
+    location_coord = geolocator.geocode(', '.join((address, 'Barcelona')))
+    if not location_coord:
+        raise ValueError(f'invalid address: {address}')
     return Coordinate(location_coord.latitude, location_coord.longitude)
 
 

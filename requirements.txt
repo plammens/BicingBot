@@ -5,3 +5,4 @@ pandas>=0.24
 geopy>=1.19
 staticmap
 urllib3<1.25  # not directly needed; just so `requests` doesn't complain
+pillow  # just for type annotations; already required by staticmap

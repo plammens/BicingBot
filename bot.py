@@ -1,6 +1,5 @@
 import argparse
 import datetime
-import io
 import itertools
 import logging
 from typing import Callable, Tuple
@@ -12,6 +11,7 @@ import data
 
 
 # ------------------------ Bot initialization ------------------------
+
 
 def load_text(name: str) -> str:
     """
@@ -104,7 +104,7 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
     """
 
     def decorated(update: tg.Update, context: tge.CallbackContext):
-        prompt_gen = itertools.cycle('Processing{:<3} ⏱'.format('.'*i) for i in range(4))
+        prompt_gen = itertools.cycle('Processing{:<3} ⏱'.format('.' * i) for i in range(4))
         progress_message: tg.Message = update.message.reply_text(next(prompt_gen))
 
         def progress_job_callback(_: tge.CallbackContext):
@@ -120,16 +120,6 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
 
     decorated.__name__ = callback.__name__  # to work with cmdhandler decorator defaults
     return decorated
-
-def image_message(update: tg.Update, image):
-    """
-    :param update:
-    :param image:
-    """
-    image_bytes = io.BytesIO()
-    image.save(image_bytes, 'JPEG')
-    image_bytes.seek(0)
-    update.message.reply_photo(photo=image_bytes)
 
 
 # ------------------------ Command handlers ------------------------
@@ -206,17 +196,18 @@ def route(update: tg.Update, context: tge.CallbackContext):
     origin = data.address_to_coord(origin)
     destination = data.address_to_coord(destination)
 
-    G, s = graph.route(origin, destination)
-
-    image_message(update, G.plot())
-    update.message.reply_text(f'Expected time of the route: {datetime.timedelta(seconds = int(s))}')
+    path, total_seconds = graph.route(origin, destination)
+    time = datetime.timedelta(seconds=int(total_seconds))
+    image = data.save_image_to_memory(path.plot())
+    update.message.reply_photo(photo=image, caption=f'Expected duration of the route: {time}')
 
 
 @cmdhandler()
 @progress
 def plotgraph(update: tg.Update, context: tge.CallbackContext):
     graph = get_graph(context)
-    image_message(update, graph.plot())
+    image = data.save_image_to_memory(graph.plot())
+    update.message.reply_photo(photo=image)
 
 
 @cmdhandler()
@@ -235,8 +226,8 @@ def distribute(update: tg.Update, context: tge.CallbackContext):
         yield f'Total cost of redistribution: `{total_cost} bikes·m`'
         if total_cost > 0:
             tail, head, flow, dist = graph.max_cost_edge(flow_dict)
-            yield f'Maximal edge cost: `{tail.Index} --> {head.Index}: {flow*dist} ' \
-                  f'({flow} bikes · {dist} m`)'
+            yield f'Maximal edge cost: `{tail.Index} --> {head.Index}: {flow * dist} ' \
+                f'({flow} bikes · {dist} m`)'
 
     update.message.reply_markdown('\n'.join(lines()))
 
@@ -292,7 +283,7 @@ def get_args(context: tge.CallbackContext, types: Tuple[Tuple[str, callable], ..
 def markdown_safe_reply(original_message: tg.Message, reply_txt: str):
     """
     Tries to reply to ``original_message`` in Markdown; falls back to plain text
-    if it can't be parsed correctly"
+    if it can't be parsed correctly.
     """
     try:
         original_message.reply_markdown(reply_txt)

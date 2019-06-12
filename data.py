@@ -1,7 +1,9 @@
 import collections
+import io
 import itertools as it
 from typing import Dict, Iterable, Set, Tuple
 
+import PIL.Image
 import geopy
 import math
 import networkx as nx
@@ -294,7 +296,7 @@ class _DistanceGrid:
         grid = self._grid
         i, j = index
         for di, dj in it.product((0, 1, -1), repeat=2):
-            yield self._grid.get((i + di, j + dj), tuple())  # default is empty cell
+            yield grid.get((i + di, j + dj), tuple())  # default is empty cell
 
     @staticmethod
     def _get_degree_side_lengths(lat: float, dist: float) -> Iterable[float]:
@@ -360,3 +362,16 @@ def fetch_stations() -> pd.DataFrame:
 def _fetch_station_data_from_json(url: str) -> pd.DataFrame:
     json_data = pd.read_json(url).data.stations
     return pd.DataFrame.from_records(data=json_data, index='station_id')
+
+
+# ------------------------ Other utils ------------------------
+
+def save_image_to_memory(image: PIL.Image.Image) -> io.BytesIO:
+    """
+    Saves and returns the binary image data from a PIL image object
+    :param image: PIL image object to save
+    """
+    image_bytes = io.BytesIO()
+    image.save(image_bytes, 'JPEG')
+    image_bytes.seek(0)
+    return image_bytes

@@ -162,6 +162,7 @@ def status(update: tg.Update, context: tge.CallbackContext):
 
 
 @cmdhandler(command='graph')
+@progress
 def make_graph(update: tg.Update, context: tge.CallbackContext):
     graph = get_graph(context)
     distance, = get_args(context, types=(('distance', float),))
@@ -188,6 +189,15 @@ def components(update: tg.Update, context: tge.CallbackContext):
 
 
 @cmdhandler()
+@progress
+def plotgraph(update: tg.Update, context: tge.CallbackContext):
+    graph = get_graph(context)
+    image = data.save_image_to_memory(graph.plot())
+    update.message.reply_photo(photo=image)
+
+
+@cmdhandler()
+@progress
 def route(update: tg.Update, context: tge.CallbackContext):
     graph = get_graph(context)
     context.args = ' '.join(context.args).split(',')
@@ -204,19 +214,6 @@ def route(update: tg.Update, context: tge.CallbackContext):
 
 @cmdhandler()
 @progress
-def plotgraph(update: tg.Update, context: tge.CallbackContext):
-    graph = get_graph(context)
-    image = data.save_image_to_memory(graph.plot())
-    update.message.reply_photo(photo=image)
-
-
-@cmdhandler()
-def reset(update: tg.Update, context: tge.CallbackContext):
-    context.chat_data.clear()
-    update.message.reply_markdown(OK_TXT)
-
-
-@cmdhandler()
 def distribute(update: tg.Update, context: tge.CallbackContext):
     graph = get_graph(context)
     min_bikes, min_free_docks = get_args(context, (('min_bikes', int), ('min_bikes', int)))
@@ -230,6 +227,12 @@ def distribute(update: tg.Update, context: tge.CallbackContext):
                 f'({flow} bikes · {dist} m`)'
 
     update.message.reply_markdown('\n'.join(lines()))
+
+
+@cmdhandler()
+def reset(update: tg.Update, context: tge.CallbackContext):
+    context.chat_data.clear()
+    update.message.reply_markdown(OK_TXT)
 
 
 # ------------------------ Other utilities ------------------------

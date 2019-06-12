@@ -123,8 +123,7 @@ class BicingGraph(nx.Graph):
                 for a, b in pairs:
                     dist = distance(a, b)
                     if 0 < dist <= max_distance:
-                        # TODO: unify distance/weight/speed attributes?
-                        self.add_edge(a, b, weight=dist)
+                        self.add_edge(a, b, distance=dist)
 
             # mark cell as empty (to avoid repeated computations)
             cell.clear()
@@ -132,6 +131,7 @@ class BicingGraph(nx.Graph):
     def plot(self, size: int = 800, node_col='blue', edge_col='purple'):
         """Return a static map of BCN with edges between stations drawn in red"""
         # TODO: colours for connected components?
+        # TODO: top-level function
         static_map = sm.StaticMap(size, size, padding_x=20, padding_y=20)
         node_size: int = max(3, int(_NODE_SCALE_FACTOR * size))
         edge_width: int = max(2, node_size - 2)
@@ -146,51 +146,77 @@ class BicingGraph(nx.Graph):
         static_map.lines.extend(line(u, v) for u, v in self.edges)
         return static_map.render()
 
-    def route(self, origin: Coordinate, destination: Coordinate):
+    def route(self, origin: Coordinate, destination: Coordinate,
+              walking_speed: float = 10 / 9, biking_speed: float = 25 / 9):
         """
         Function that provides the minimum time route between two coordinates.
         Considering that the user can only use a bicycle between two nodes with an
-        adjacent edge in the geometric graph. The walking parts are ponderated by a
-        5/2 factor.
+        adjacent edge in the geometric graph.
+
+        The walking distances are scaled by a factor to compensate for the different
+        traversal speed, while maintaining the proportions between walking and cycling
+        speed (to avoid having to explicitly calculate the time needed to traverse each edge).
 
         :param origin: Coordinate of the origin.
         :param destination: Coordinate of the destination.
+        :param walking_speed: average walking speed in m/s
+        :param biking_speed: average biking speed in m/s
 
-        :return GraphRoute: the graph that contains that contains the optimal path
-        :return duration: (in seconds) with the convention:
-                                walking average speed: 4 km/h
-                                bycicle riding average speed: 10 km/h
-        Idea:
-            Firstly take the geometric graph as a template. Then add the
-            origin and destination node, after connects them with a weight of
-            dist*5/2 to all the bicing stations. Finally, computes the path
-            with the minimum weight between origin and destination.
+        :returns: (path_graph, duration);
+                  - path_graph: the graph that contains that contains the optimal path;
+                  - duration: total amount of seconds needed to traverse the route with
+                             the given speeds
         """
-        # TODO: refactor
 
+        # Implementation note:
+        # Instead of calculating the traversal time for each edge explicitly,
+        # the walking distances are scaled by a factor to compensate for the different
+        # traversal speed, while maintaining the proportions between walking and cycling
+        # speed, taking advantage of the already computed 'distance' attribute.
+
+        # wrap with StationWrapper for convenience (i.e. `coords` property):
         origin, destination = map(StationWrapper, (origin, destination))
 
-        GraphRoute = nx.Graph.copy(self)
+        with self._route_setup(origin, destination, biking_speed / walking_speed):
+            total_distance, path = nx.single_source_dijkstra(self, origin, destination,
+                                                             weight='distance')
 
-        GraphRoute.add_node(origin)
-        GraphRoute.add_node(destination)
+        # construct path graph:
+        path_graph = BicingGraph(path)
+        path_graph.add_edges_from(e for e in zip(path, path[1:]))
 
-        GraphRoute.add_edge(origin, destination, weight=distance(origin, destination) * 5 / 2)
+        duration = total_distance / biking_speed
+        return path_graph, duration
 
-        for node in GraphRoute.nodes:
-            GraphRoute.add_edge(origin, node, weight=distance(origin, node) * 5 / 2)
-            GraphRoute.add_edge(destination, node, weight=distance(destination, node) * 5 / 2)
+    def _route_setup(self, origin: StationWrapper, destination: StationWrapper, walk_factor: float):
+        """
+        Returns context manager that prepares the graph to be traversed
+        by a Dijkstra search, and cleans up afterwards. To avoid copying the graph.
+        """
 
-        d, NodeList = nx.single_source_dijkstra(GraphRoute, origin, destination)
+        class RouteContextManager:
+            def __init__(self, graph: nx.Graph):
+                self.graph = graph
 
-        GraphRoute = BicingGraph(NodeList)
+            def __enter__(self):
+                g = self.graph
+                g.add_node(origin)
+                g.add_node(destination)
 
-        for first, second in zip(NodeList, NodeList[1:]):
-            GraphRoute.add_edge(first, second)
+                # consider the possibility of walking end-to-end:
+                g.add_edge(origin, destination, distance=distance(origin, destination) * walk_factor)
+                # connect all nodes to origin and destination:
+                for node in g.nodes:
+                    g.add_edge(origin, node, distance=distance(origin, node) * walk_factor)
+                    g.add_edge(destination, node, distance=distance(destination, node) * walk_factor)
 
-        duration = d * 9 / 25
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                # clean up graph, restoring it to its initial state:
+                g = self.graph
+                g.remove_node(origin)
+                g.remove_node(destination)
 
-        return GraphRoute, duration
+        return RouteContextManager(self)
 
     FlowDictType = Dict[StationWrapper, Dict[StationWrapper, int]]
 

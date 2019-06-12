@@ -78,11 +78,11 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
             try:
                 callback(update, context)
                 logging.info(f'served {command_info}')
-            except (UsageError, ValueError) as e:
+            except (UsageError, ValueError, data.nx.NetworkXAlgorithmError) as e:
                 text = '\n\n'.join([USAGE_ERROR_TXT, format_exception_md(e),
                                     'See /help for usage info.'])
                 markdown_safe_reply(update.message, text)
-                logging.info(f'served {command_info} (usage error)')
+                logging.info(f'served {command_info} (usage/algorithm error)')
             except Exception as e:
                 text = '\n\n'.join([INTERNAL_ERROR_TXT, format_exception_md(e)])
                 markdown_safe_reply(update.message, text)

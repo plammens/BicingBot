@@ -209,6 +209,22 @@ def reset(update: tg.Update, context: tge.CallbackContext):
     update.message.reply_markdown(OK_TXT)
 
 
+@cmdhandler()
+def distribute(update: tg.Update, context: tge.CallbackContext):
+    graph = get_graph(context)
+    min_bikes, min_free_docks = get_args(context, (('min_bikes', int), ('min_bikes', int)))
+    total_cost, flow_dict = graph.distribute(min_bikes, min_free_docks)
+
+    def lines():
+        yield f'Total cost of redistribution: `{total_cost} bikes·m`'
+        if total_cost > 0:
+            tail, head, flow, dist = graph.max_cost_edge(flow_dict)
+            yield f'Maximal edge cost: `{tail.Index} --> {head.Index}: {flow*dist} ' \
+                  f'({flow} bikes · {dist} m`)'
+
+    update.message.reply_markdown('\n'.join(lines()))
+
+
 # ------------------------ Other utilities ------------------------
 
 class UsageError(Exception):

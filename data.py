@@ -1,3 +1,4 @@
+import collections
 from typing import Dict, Iterable, Set, Tuple
 
 import math
@@ -59,6 +60,9 @@ class StationWrapper:
     def coords(self):
         """Get the coordinates for this station as a ``Coordinate`` object"""
         return Coordinate(self.lat, self.lon)
+
+
+FlowEdge = collections.namedtuple('FlowEdge', ['tail', 'head', 'flow', 'dist'])
 
 
 class BicingGraph(nx.Graph):
@@ -148,7 +152,9 @@ class BicingGraph(nx.Graph):
         static_map.lines.extend(line(u, v) for u, v in self.edges)
         return static_map.render()
 
-    def distribute(self, min_bikes: int, min_free_docks: int) -> Tuple[float, dict]:
+    FlowDictType = Dict[StationWrapper, Dict[StationWrapper, int]]
+
+    def distribute(self, min_bikes: int, min_free_docks: int) -> Tuple[float, FlowDictType]:
         if not isinstance(min_bikes, int) or not isinstance(min_free_docks, int) or \
                 min_bikes < 0 or min_free_docks < 0:
             raise ValueError("constraints should be non-negative integers")
@@ -208,6 +214,17 @@ class BicingGraph(nx.Graph):
     def _write_edge_costs(self):
         for u, v, attributes in self.edges(data=True):
             attributes['distance'] = int(_FLOAT_TO_INT_FACTOR * distance(u, v))
+
+    def max_cost_edge(self, flow_dict: FlowDictType) -> FlowEdge:
+
+        def gen() -> Iterable[FlowEdge]:
+            for n1, n1_dict in flow_dict.items():
+                for n2, flow in n1_dict.items():
+                    if flow != 0:
+                        dist = self.edges[n1, n2]['distance'] / _FLOAT_TO_INT_FACTOR
+                        yield FlowEdge(n1, n2, flow, dist)
+
+        return max(gen(), key=lambda e: e.flow * e.dist)
 
 
 class _DistanceGrid:

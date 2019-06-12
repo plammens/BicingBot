@@ -281,7 +281,7 @@ def route(update: tg.Update, context: tge.CallbackContext):
 
     path, total_seconds = graph.route(origin, destination)
     time = datetime.timedelta(seconds=int(total_seconds))
-    image = data.save_image_to_memory(path.plot())
+    image = data.save_image_to_memory(data.plot_route(path))
     update.message.reply_photo(photo=image, caption=f'Expected duration of the route: {time}')
 
 

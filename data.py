@@ -1,7 +1,7 @@
 import collections
 import io
 import itertools as it
-from typing import Dict, Iterable, Set, Tuple
+from typing import Dict, Iterable, Set, Tuple, List
 
 import PIL.Image
 import geopy
@@ -128,23 +128,13 @@ class BicingGraph(nx.Graph):
             # mark cell as empty (to avoid repeated computations)
             cell.clear()
 
-    def plot(self, size: int = 800, node_col='blue', edge_col='purple'):
+    def plot(self, size: int = 800, node_col='blue', edge_col='purple') -> PIL.Image.Image:
         """Return a static map of BCN with edges between stations drawn in red"""
         # TODO: colours for connected components?
-        # TODO: top-level function
-        static_map = sm.StaticMap(size, size, padding_x=20, padding_y=20)
-        node_size: int = max(3, int(_NODE_SCALE_FACTOR * size))
-        edge_width: int = max(2, node_size - 2)
-
-        def circle_marker(node) -> sm.CircleMarker:
-            return sm.CircleMarker((node.lon, node.lat), node_col, node_size)
-
-        def line(u, v) -> sm.Line:
-            return sm.Line([(u.lon, u.lat), (v.lon, v.lat)], edge_col, edge_width)
-
-        static_map.markers.extend(circle_marker(u) for u in self.nodes)
-        static_map.lines.extend(line(u, v) for u, v in self.edges)
-        return static_map.render()
+        plot = BicingPlot(size, size, 20, 20)
+        plot.plot_stations(self.nodes, color=node_col)
+        plot.plot_edges(self.edges, color=edge_col)
+        return plot.render()
 
     def route(self, origin: Coordinate, destination: Coordinate,
               walking_speed: float = 10 / 9, biking_speed: float = 25 / 9):
@@ -180,13 +170,8 @@ class BicingGraph(nx.Graph):
         with self._route_setup(origin, destination, biking_speed / walking_speed):
             total_distance, path = nx.single_source_dijkstra(self, origin, destination,
                                                              weight='distance')
-
-        # construct path graph:
-        path_graph = BicingGraph(path)
-        path_graph.add_edges_from(e for e in zip(path, path[1:]))
-
         duration = total_distance / biking_speed
-        return path_graph, duration
+        return path, duration
 
     def _route_setup(self, origin: StationWrapper, destination: StationWrapper, walk_factor: float):
         """
@@ -345,6 +330,52 @@ class _DistanceGrid:
         lat = math.radians(lat)
         latitude_radius = _AVG_EARTH_RADIUS_M * math.cos(lat)
         return map(lambda r: math.degrees(side_length / r), (_AVG_EARTH_RADIUS_M, latitude_radius))
+
+
+# ------------------------ Plotting utils ------------------------
+
+class BicingPlot(sm.StaticMap):
+    """
+    Auxiliary class to plot static maps of Barcelona with Bicing stations
+    and edges between them.
+    """
+
+    def plot_stations(self, stations: Iterable[StationWrapper], size: int = None, color='blue'):
+        """Add stations to the current plot.
+        :param stations: iterable of stations to plot
+        :param size: size in pixels of marker for a station
+        :param color: color of station markers
+        """
+
+        def circle_marker(node) -> sm.CircleMarker:
+            return sm.CircleMarker((node.lon, node.lat), color, size)
+
+        size = size or _NODE_SCALE_FACTOR * max(self.width, self.height)
+        self.markers.extend(circle_marker(u) for u in stations)
+
+    def plot_edges(self, edges: Iterable[Tuple[StationWrapper, StationWrapper]],
+                   width: int = 2, color='purple'):
+        """Add stations to the current plot.
+        :param edges: iterable of edges to plot
+        :param width: width in pixels of an edge
+        :param color: color of edges
+        """
+
+        def line(u, v) -> sm.Line:
+            return sm.Line([(u.lon, u.lat), (v.lon, v.lat)], color, width)
+
+        self.lines.extend(line(u, v) for u, v in edges)
+
+
+def plot_route(path: List[StationWrapper], size: int = 800) -> PIL.Image.Image:
+    edges = list(zip(path, path[1:]))
+    plot = BicingPlot(size, size, 20, 20)
+    plot.plot_stations(path[1:-1], size=12)
+    plot.plot_edges(edges[1:-1], width=4)
+    # Special treatment for start and end edges:
+    plot.plot_stations((path[0], path[-1]), size=20, color='crimson')
+    plot.plot_edges((edges[0], edges[-1]), width=4, color='orange')
+    return plot.render()
 
 
 # ------------------------ Computational utils ------------------------

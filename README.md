@@ -68,9 +68,9 @@ Finding an example of an internal error is left as a fun challenge to the user.
 
 ### Example
 Standard conversation with BicingBot:
-<left><img src='images\exemple1.png' width='300' style="float: left;"></left>
+<center><img src='images\exemple1.png' width='300' style="float: left;"></center>
 <center><img src='images\exemple2.png' width='300' style="float: center;"></center>
-<right><img src='images\exemple3.png' width='300' style="float: right;"></right>
+<center><img src='images\exemple3.png' width='300' style="float: right;"></center>
 
 ## Notes on running the server
 

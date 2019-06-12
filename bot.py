@@ -121,6 +121,16 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
     decorated.__name__ = callback.__name__  # to work with cmdhandler decorator defaults
     return decorated
 
+def image_message(update: tg.Update, image):
+    """
+    :param update:
+    :param image:
+    """
+    image_bytes = io.BytesIO()
+    image.save(image_bytes, 'JPEG')
+    image_bytes.seek(0)
+    update.message.reply_photo(photo=image_bytes)
+
 
 # ------------------------ Command handlers ------------------------
 
@@ -189,18 +199,24 @@ def components(update: tg.Update, context: tge.CallbackContext):
 
 @cmdhandler()
 def route(update: tg.Update, context: tge.CallbackContext):
-    raise NotImplementedError
+    graph = get_graph(context)
+    context.args = ' '.join(context.args).split(',')
+    origin, destination, = get_args(context, types=(('origin', str), ('destination', str),))
+
+    origin = data.StrToCoordinate(origin)
+    destination = data.StrToCoordinate(destination)
+
+    G, s = graph.route(origin, destination)
+
+    image_message(update, G.plot())
+    update.message.reply_text(f'Expected time of the route: {datetime.timedelta(seconds = int(s))}')
 
 
 @cmdhandler()
 @progress
 def plotgraph(update: tg.Update, context: tge.CallbackContext):
     graph = get_graph(context)
-    image = graph.plot()
-    image_bytes = io.BytesIO()
-    image.save(image_bytes, 'JPEG')
-    image_bytes.seek(0)
-    update.message.reply_photo(photo=image_bytes)
+    image_message(update, graph.plot())
 
 
 @cmdhandler()

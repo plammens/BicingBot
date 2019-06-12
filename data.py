@@ -5,6 +5,7 @@ import math
 import networkx as nx
 import pandas as pd
 import staticmap as sm
+from geopy.geocoders import Nominatim
 from haversine import Unit, haversine
 from haversine.haversine import _AVG_EARTH_RADIUS_KM
 
@@ -66,9 +67,10 @@ FlowEdge = collections.namedtuple('FlowEdge', ['tail', 'head', 'flow', 'dist'])
 
 
 class BicingGraph(nx.Graph):
-    def __init__(self, stations: Iterable, **attr):
+    def __init__(self, stations: Iterable = None, **attr):
         super().__init__(**attr)
-        self.add_nodes_from(stations)
+        if stations:
+            self.add_nodes_from(stations)
         self._distance: float = 0.0
 
     @classmethod
@@ -126,13 +128,19 @@ class BicingGraph(nx.Graph):
         grid_dict = grid.cell_dict
         for index, cell in grid_dict.items():
             # add every edge in the Cartesian product cell x cell
-            self.add_edges_from(
-                (a, b) for a in cell for b in cell if a is not b and distance(a, b) <= dist)
+            for a in cell:
+                for b in cell:
+                    if distance(a, b) <= dist:
+                        self.add_edge(a, b, weight=distance(a, b))
             # connect neighbours:
             for neighbour_index in neighbours(index):
                 neighbour = grid_dict.get(neighbour_index, tuple())  # default is empty cell
-                self.add_edges_from((a, b) for a in cell for b in neighbour
-                                    if distance(a, b) <= dist)
+
+                for a in cell:
+                    for b in neighbour:
+                        if distance(a, b) <= dist:
+                            self.add_edge(a, b, weight=distance(a, b))
+
             # mark cell as empty (to avoid repeated computations)
             cell.clear()
 
@@ -151,6 +159,51 @@ class BicingGraph(nx.Graph):
         static_map.markers.extend(circle_marker(u) for u in self.nodes)
         static_map.lines.extend(line(u, v) for u, v in self.edges)
         return static_map.render()
+
+    def route(self, origin: Coordinate, destination: Coordinate):
+        """
+        Function that provides the minimum time route between two coordinates.
+        Considering that the user can only use a bicycle between two nodes with an
+        adjacent edge in the geometric graph. The walking parts are ponderated by a
+        5/2 factor.
+
+        :param origin: Coordinate of the origin.
+        :param destination: Coordinate of the destination.
+
+        :return GraphRoute: the graph that contains that contains the optimal path
+        :return duration: (in seconds) with the convention:
+                                walking average speed: 4 km/h
+                                bycicle riding average speed: 10 km/h
+        Idea:
+            Firstly take the geometric graph as a template. Then add the
+            origin and destination node, after connects them with a weight of
+            dist*5/2 to all the bicing stations. Finally, computes the path
+            with the minimum weight between origin and destination.
+        """
+
+        origin, destination = map(StationWrapper, (origin, destination))
+
+        GraphRoute = nx.Graph.copy(self)
+
+        GraphRoute.add_node(origin)
+        GraphRoute.add_node(destination)
+
+        GraphRoute.add_edge(origin, destination, weight=distance(origin, destination) * 5 / 2)
+
+        for node in GraphRoute.nodes:
+            GraphRoute.add_edge(origin, node, weight=distance(origin, node) * 5 / 2)
+            GraphRoute.add_edge(destination, node, weight=distance(destination, node) * 5 / 2)
+
+        d, NodeList = nx.single_source_dijkstra(GraphRoute, origin, destination)
+
+        GraphRoute = BicingGraph(NodeList)
+
+        for first, second in zip(NodeList, NodeList[1:]):
+            GraphRoute.add_edge(first, second)
+
+        duration = d*9/25
+
+        return GraphRoute, duration
 
     FlowDictType = Dict[StationWrapper, Dict[StationWrapper, int]]
 
@@ -280,6 +333,12 @@ class _DistanceGrid:
 def distance(station1: StationWrapper, station2: StationWrapper) -> float:
     """Utility for the distance between two stations, in meters"""
     return haversine(tuple(station1.coords), tuple(station2.coords), unit=Unit.METERS)
+
+
+def StrToCoordinate(location: str) -> Coordinate:
+    geolocator = Nominatim(user_agent="BCNBicingBot")
+    locationCoord = geolocator.geocode(location + ', Barcelona')
+    return Coordinate(locationCoord.latitude, locationCoord.longitude)
 
 
 def fetch_stations() -> pd.DataFrame:

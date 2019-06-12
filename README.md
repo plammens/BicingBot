@@ -26,33 +26,30 @@ No further preparation is needed to interact with the bot.
 
 [@BCNBicingBot](https://t.me/BCNBicingBot) supports the following commands:
 
- - `/start` &ndash; initialize a conversation with the bot
+ - /start -- initialize a conversation with the bot.
  
- - `/help` &ndash; display a help message with a list of commands
+ - /help -- display this help message.
  
- - `/graph <distance>` &ndash;  generate a geometric graph of the Bicing stations. Takes a single 
- argument, `<distance>`, the maximum distance between two adjacent nodes, as a non-negative real 
- number.
+ - /graph `<distance>` --  generate a geometric graph of the Bicing stations. Takes a single argument, `<distance>`, the maximum distance between two adjacent nodes, as a non-negative real number.
     
- - `/status` &ndash; display information on the session's current status (i.e. last fetch time, 
- current graph distance, etc.)
+ - /status -- display information on the session's current status (i.e. last fetch time, current graph distance, etc.)
      
- - `/nodes` &ndash; display the number of nodes
+ - /nodes -- display the number of nodes.
  
- - `/edges` &ndash; display the number of edges
+ - /edges -- display the number of edges.
  
- - `/components` &ndash; display the number of connected components
+ - /components -- display the number of connected components.
  
- - /plotgraph &ndash; send an image with a plot of the current 
-    graph on the map
+ - /plotgraph -- send an image with a plot of the current 
+    graph on the map.
  
- - `/route <origin> <destination>` &ndash; plot a route between two stations. The two stations are 
- given as two space-separated string arguments, `<origin> <destination>`, indicating the street 
- addresses of each station.
+ - /route `<origin> <destination>` -- plot a route between two stations. The two stations are given as two space-separated string arguments, `<origin> <destination>`, indicating the street addresses of each station.
     
- - `/reset` &ndash; clear any stored data (to start the session from scratch)
+ - /reset -- clear any stored data (to start from scratch).
  
- - `/authors` &ndash; display the authors of the bot
+ - /authors -- display the authors of the bot.
+ 
+ - /distribute `<bikes> <docks>` -- display the total cost (dist x num. bikes) of transferring bycicles, such that in each station there must be `<bikes>` number of bicicles and `<docks>` number of empty places.  
 
 
 ### Errors

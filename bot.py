@@ -394,10 +394,14 @@ def start_bot(logging_level: str):
     logging.info('bot online')
 
 
-# Main entry point if run as script:
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description="Start the BCNBicingBot.")
     parser.add_argument('--logging-level', '-l', action='store', default='INFO', dest='level',
                         type=lambda s: s.upper(), choices=['INFO', 'DEBUG'], help='logging level')
     command_line_args = parser.parse_args()
     start_bot(command_line_args.level)
+
+
+# Main entry point if run as script:
+if __name__ == '__main__':
+    main()

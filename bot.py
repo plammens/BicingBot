@@ -227,8 +227,8 @@ def distribute(update: tg.Update, context: tge.CallbackContext):
         yield f'*Total cost of redistribution*: `{round(total_cost / 1000, 3)} bikes·km`'
         if total_cost > 0:
             tail, head, flow, dist = graph.max_cost_edge(flow_dict)
-            yield f'*Maximal edge cost*: `{tail.Index} --> {head.Index}: {flow * dist} ' \
-                f'({flow} bikes · {dist} m`)'
+            yield f'*Maximal edge cost*: `{tail.Index} --> {head.Index}: {flow * dist}` ' \
+                f'(`{flow} bikes · {dist} m`)'
 
     update.message.reply_markdown('\n'.join(lines()))
 

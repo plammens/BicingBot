@@ -114,16 +114,9 @@ class BicingGraph(nx.Graph):
         meters apart
         :param max_distance: distance
         """
-        grid_dict = grid.cell_dict
-
-        def neighbours(cell_idx: Tuple[int, int]) -> Iterable[Tuple[int, int]]:
-            i, j = cell_idx
-            for di, dj in it.product((0, 1, -1), repeat=2):
-                yield grid_dict.get((i + di, j + dj), default=tuple())  # default is empty cell
-
-        for index, cell in grid_dict.items():
+        for index, cell in grid.cell_dict.items():
             # add every edge in the Cartesian product cell x neighbour if distance(·, ·) <= max_dist
-            for neighbour in neighbours(index):
+            for neighbour in grid.neighbours(index):
                 pairs = it.combinations(cell, r=2) if cell is neighbour else it.product(cell, neighbour)
                 for a, b in pairs:
                     dist = distance(a, b)
@@ -296,8 +289,15 @@ class _DistanceGrid:
     def cell_dict(self) -> Dict[Tuple[int, int], Set]:
         return self._grid
 
+    def neighbours(self, index: Tuple[int, int]) -> Iterable[Tuple[int, int]]:
+        """Iterator over the 8 adjacent cells to the cell with index `cell_idx`"""
+        grid = self._grid
+        i, j = index
+        for di, dj in it.product((0, 1, -1), repeat=2):
+            yield self._grid.get((i + di, j + dj), tuple())  # default is empty cell
+
     @staticmethod
-    def _get_degree_side_lengths(lat: float, dist: float) -> Iterable[float, float]:
+    def _get_degree_side_lengths(lat: float, dist: float) -> Iterable[float]:
         """
         Calculate the (approximate) latitude/longitude degree-increments of the sides of a
         "square" on the earth's surface such that any pair of points within it is at most

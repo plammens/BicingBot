@@ -15,6 +15,7 @@ _URL_STATION_STATUS = 'https://api.bsmsa.eu/ext/api/bsm/gbfs/v2/en/station_statu
 _DATA_COLUMNS = ['lat', 'lon', 'num_bikes_available', 'num_docks_available']
 
 _NODE_SCALE_FACTOR: float = 5 / 800
+_FLOAT_TO_INT_FACTOR: float = 1000.0
 
 
 class Coordinate:
@@ -121,7 +122,8 @@ class BicingGraph(nx.Graph):
         grid_dict = grid.cell_dict
         for index, cell in grid_dict.items():
             # add every edge in the Cartesian product cell x cell
-            self.add_edges_from((a, b) for a in cell for b in cell if a is not b and distance(a, b) <= dist)
+            self.add_edges_from(
+                (a, b) for a in cell for b in cell if a is not b and distance(a, b) <= dist)
             # connect neighbours:
             for neighbour_index in neighbours(index):
                 neighbour = grid_dict.get(neighbour_index, tuple())  # default is empty cell
@@ -145,6 +147,67 @@ class BicingGraph(nx.Graph):
         static_map.markers.extend(circle_marker(u) for u in self.nodes)
         static_map.lines.extend(line(u, v) for u, v in self.edges)
         return static_map.render()
+
+    def distribute(self, min_bikes: int, min_free_docks: int) -> Tuple[float, dict]:
+        if not isinstance(min_bikes, int) or not isinstance(min_free_docks, int) or \
+                min_bikes < 0 or min_free_docks < 0:
+            raise ValueError("constraints should be non-negative integers")
+
+        self._write_bike_demands(min_bikes, min_free_docks)
+        self._write_edge_costs()
+        cost, flow_dict = nx.network_simplex(self.to_directed(as_view=True),
+                                             demand='bike_demand', weight='distance')
+        return round(cost / _FLOAT_TO_INT_FACTOR, 3), flow_dict
+
+    def _write_bike_demands(self, min_bikes: int, min_free_docks: int):
+        total_demand: int = 0
+
+        for node, attributes in self.nodes(data=True):
+            bikes, free_docks = node.num_bikes_available, node.num_docks_available
+            total_docks = bikes + free_docks
+            if total_docks < min_bikes + min_free_docks:
+                raise nx.NetworkXUnfeasible(
+                    f'cannot satisfy constraints min_bikes={min_bikes}, min_free_docks='
+                    f'{min_free_docks} on a station with {total_docks} total docks'
+                )
+
+            bike_deficit = ramp(min_bikes - bikes)
+            dock_deficit = ramp(min_free_docks - free_docks)
+            demand = bike_deficit or -dock_deficit
+            assert bikes + demand >= min_bikes
+            assert free_docks - demand >= min_free_docks
+
+            attributes['bike_demand'] = demand
+            total_demand += demand
+
+        self._distribute_excess_demand(min_bikes, min_free_docks, total_demand)
+
+    def _distribute_excess_demand(self, min_bikes: int, min_free_docks: int, total_demand: int):
+        gen = iter(self.nodes(data=True))
+        while total_demand < 0:
+            # Try to find free docks in which to place surplus bikes
+            node, attributes = next(gen)
+            demand = attributes['bike_demand']
+            free_docks = node.num_docks_available
+            surplus_docks = min([free_docks - demand - min_free_docks, -total_demand])
+            demand += surplus_docks
+
+            total_demand += surplus_docks
+            attributes['bike_demand'] = demand
+
+        while total_demand > 0:
+            # Try to find surplus bikes to satisfy demand
+            node, attributes = next(gen)
+            demand = attributes['bike_demand']
+            bikes = node.num_bikes_available
+            surplus_bikes = min([bikes + demand - min_bikes, total_demand])
+            demand -= surplus_bikes
+            total_demand -= surplus_bikes
+            attributes['bike_demand'] = demand
+
+    def _write_edge_costs(self):
+        for u, v, attributes in self.edges(data=True):
+            attributes['distance'] = int(_FLOAT_TO_INT_FACTOR * distance(u, v))
 
 
 class _DistanceGrid:
@@ -213,3 +276,11 @@ def fetch_stations() -> pd.DataFrame:
 def _fetch_station_data_from_json(url: str) -> pd.DataFrame:
     json_data = pd.read_json(url).data.stations
     return pd.DataFrame.from_records(data=json_data, index='station_id')
+
+
+def ramp(x):
+    """
+    :param x: numeric value
+    :return: max{0, x}
+    """
+    return x if x > 0 else 0

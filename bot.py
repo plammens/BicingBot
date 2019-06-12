@@ -107,16 +107,20 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
         prompt_gen = itertools.cycle('Processing{:<3} ⏱'.format('.' * i) for i in range(4))
         progress_message: tg.Message = update.message.reply_text(next(prompt_gen))
 
-        def progress_job_callback(_: tge.CallbackContext):
+        def progress_job_callback(context: tge.CallbackContext):
             try:
                 progress_message.edit_text(next(prompt_gen))
             except tg.error.BadRequest:
-                pass  # ignore if already deleted
+                context.job.schedule_removal()  # shutdown if already deleted
 
+        logging.debug(f'adding progress message to {update.effective_chat.id}')
         job: tge.Job = context.job_queue.run_repeating(progress_job_callback, 0.5)
-        callback(update, context)
-        job.schedule_removal()
-        progress_message.delete()
+        try:
+            callback(update, context)
+        finally:
+            logging.debug(f'removing progress message from {update.effective_chat.id}')
+            job.schedule_removal()
+            progress_message.delete()
 
     decorated.__name__ = callback.__name__  # to work with cmdhandler decorator defaults
     return decorated

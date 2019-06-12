@@ -67,9 +67,17 @@ Finding an example of an internal error is left as a fun challenge to the user.
 
 
 ### Example
+Standard conversation with BicingBot:
+<center><img src='images\exemple1.png' width='300' style="float: left;"></center>
+<center><img src='images\exemple2.png' width='300' style="float: center;"></center>
+<center><img src='images\exemple3.png' width='300' style="float: right;"></center>
 
 ## Notes on running the server
 
 ## Project structure
 
 ## Authors
+The authors of this project are:
+
+ - [Aleix Torres Camps](https://github.com/AlferesChronos)
+ - [Paolo Lammens](https://github.com/plammens) 

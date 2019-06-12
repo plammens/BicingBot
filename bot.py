@@ -81,11 +81,11 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
             except (UsageError, ValueError) as e:
                 text = '\n\n'.join([USAGE_ERROR_TXT, format_exception_md(e),
                                     'See /help for usage info.'])
-                update.message.reply_markdown(text)
+                markdown_safe_reply(update.message, text)
                 logging.info(f'served {command_info} (usage error)')
             except Exception as e:
                 text = '\n\n'.join([INTERNAL_ERROR_TXT, format_exception_md(e)])
-                update.message.reply_markdown(text)
+                markdown_safe_reply(update.message, text)
                 logging.error(f'{command_info}: unexpected exception', exc_info=e)
             finally:
                 logging.debug(f'exiting {command_info}')
@@ -287,6 +287,17 @@ def get_args(context: tge.CallbackContext, types: Tuple[Tuple[str, callable], ..
         raise ArgValueError(f"invalid literal for `{name}` argument: "
                             f"expected `{typ.__name__}`, got `'{arg}'`")
     return tuple(args)
+
+
+def markdown_safe_reply(original_message: tg.Message, reply_txt: str):
+    """
+    Tries to reply to ``original_message`` in Markdown; falls back to plain text
+    if it can't be parsed correctly"
+    """
+    try:
+        original_message.reply_markdown(reply_txt)
+    except tg.error.BadRequest:
+        original_message.reply_text(reply_txt)
 
 
 # ------------------------ Main entry point ------------------------

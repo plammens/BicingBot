@@ -220,13 +220,14 @@ def route(update: tg.Update, context: tge.CallbackContext):
 def distribute(update: tg.Update, context: tge.CallbackContext):
     graph = get_graph(context)
     min_bikes, min_free_docks = get_args(context, (('min_bikes', int), ('min_bikes', int)))
-    total_cost, flow_dict = graph.distribute(min_bikes, min_free_docks)
+    total_bikes, total_cost, flow_dict = graph.distribute(min_bikes, min_free_docks)
 
     def lines():
-        yield f'Total cost of redistribution: `{total_cost} bikes·m`'
+        yield f'*Total bikes displaced*: `{total_bikes}`'
+        yield f'*Total cost of redistribution*: `{round(total_cost / 1000, 3)} bikes·km`'
         if total_cost > 0:
             tail, head, flow, dist = graph.max_cost_edge(flow_dict)
-            yield f'Maximal edge cost: `{tail.Index} --> {head.Index}: {flow * dist} ' \
+            yield f'*Maximal edge cost*: `{tail.Index} --> {head.Index}: {flow * dist} ' \
                 f'({flow} bikes · {dist} m`)'
 
     update.message.reply_markdown('\n'.join(lines()))

@@ -220,7 +220,7 @@ class BicingGraph(nx.Graph):
 
     FlowDictType = Dict[StationWrapper, Dict[StationWrapper, int]]
 
-    def distribute(self, min_bikes: int, min_free_docks: int) -> Tuple[float, FlowDictType]:
+    def distribute(self, min_bikes: int, min_free_docks: int) -> Tuple[int, float, FlowDictType]:
         if not isinstance(min_bikes, int) or not isinstance(min_free_docks, int) or \
                 min_bikes < 0 or min_free_docks < 0:
             raise ValueError("constraints should be non-negative integers")
@@ -229,7 +229,8 @@ class BicingGraph(nx.Graph):
         self._write_edge_costs()
         cost, flow_dict = nx.network_simplex(self.to_directed(as_view=True),
                                              demand='bike_demand', weight='distance')
-        return round(cost / _FLOAT_TO_INT_FACTOR, 3), flow_dict
+        total_bikes = sum(flow for node_dict in flow_dict.values() for flow in node_dict.values())
+        return total_bikes, round(cost / _FLOAT_TO_INT_FACTOR, 3), flow_dict
 
     def _write_bike_demands(self, min_bikes: int, min_free_docks: int):
         total_demand: int = 0

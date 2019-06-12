@@ -103,7 +103,7 @@ class BicingGraph(nx.Graph):
         if dist < 0:
             raise ValueError("distance should be non-negative")
 
-        self.remove_edges_from(tuple(self.edges))  # No method to clear all edges in networkx's API
+        self.remove_edges_from(tuple(self.edges))  # No method to clear all edges in networkx API
         if dist > 0:
             self._add_edges_in_grid(_DistanceGrid(self.nodes, dist), dist)
         self._distance = dist
@@ -114,7 +114,7 @@ class BicingGraph(nx.Graph):
         nodes in a pre-constructed grid.
         :param grid: grid such that within each cell all nodes are within `dist`
         meters apart
-        :param max_distance: distance
+        :param max_distance: maximum distance for connected pairs of points
         """
         for index, cell in grid.cell_dict.items():
             # add every edge in the Cartesian product cell x neighbour if distance(·, ·) <= max_dist
@@ -123,6 +123,7 @@ class BicingGraph(nx.Graph):
                 for a, b in pairs:
                     dist = distance(a, b)
                     if 0 < dist <= max_distance:
+                        # TODO: unify distance/weight/speed attributes?
                         self.add_edge(a, b, weight=dist)
 
             # mark cell as empty (to avoid repeated computations)
@@ -130,6 +131,7 @@ class BicingGraph(nx.Graph):
 
     def plot(self, size: int = 800, node_col='blue', edge_col='purple'):
         """Return a static map of BCN with edges between stations drawn in red"""
+        # TODO: colours for connected components?
         static_map = sm.StaticMap(size, size, padding_x=20, padding_y=20)
         node_size: int = max(3, int(_NODE_SCALE_FACTOR * size))
         edge_width: int = max(2, node_size - 2)
@@ -164,6 +166,7 @@ class BicingGraph(nx.Graph):
             dist*5/2 to all the bicing stations. Finally, computes the path
             with the minimum weight between origin and destination.
         """
+        # TODO: refactor
 
         origin, destination = map(StationWrapper, (origin, destination))
 
@@ -209,9 +212,10 @@ class BicingGraph(nx.Graph):
             bikes, free_docks = node.num_bikes_available, node.num_docks_available
             total_docks = bikes + free_docks
             if total_docks < min_bikes + min_free_docks:
+                # TODO: custom exception subclass?
                 raise nx.NetworkXUnfeasible(
-                    f'cannot satisfy constraints min_bikes={min_bikes}, min_free_docks='
-                    f'{min_free_docks} on a station with {total_docks} total docks'
+                    f'cannot satisfy constraints `min_bikes={min_bikes}`, `min_free_docks='
+                    f'{min_free_docks}` on a station with `{total_docks}` total docks'
                 )
 
             bike_deficit = ramp(min_bikes - bikes)
@@ -253,7 +257,6 @@ class BicingGraph(nx.Graph):
             attributes['distance'] = int(_FLOAT_TO_INT_FACTOR * distance(u, v))
 
     def max_cost_edge(self, flow_dict: FlowDictType) -> FlowEdge:
-
         def gen() -> Iterable[FlowEdge]:
             for n1, n1_dict in flow_dict.items():
                 for n2, flow in n1_dict.items():
@@ -311,10 +314,7 @@ class _DistanceGrid:
         :return: the ``(latitude, longitude)`` degree increments
         """
 
-        # Scale the distance so that every pair of points in a (planar) square with this
-        # side length is at most ``self._distance`` meters apart:
         side_length = dist
-
         lat = math.radians(lat)
         latitude_radius = _AVG_EARTH_RADIUS_M * math.cos(lat)
         return map(lambda r: math.degrees(side_length / r), (_AVG_EARTH_RADIUS_M, latitude_radius))

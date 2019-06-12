@@ -269,6 +269,7 @@ def get_graph(context: tge.CallbackContext) -> data.BicingGraph:
 
 def get_args(context: tge.CallbackContext, types: Tuple[Tuple[str, callable], ...]) -> Tuple:
     """Checks and converts Telegram command arguments"""
+    # TODO: switch to ArgParse
     raw_args = context.args
     if len(raw_args) != len(types):
         raise ArgCountError(f'invalid number of arguments ({len(raw_args)}, expected {len(types)})')

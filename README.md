@@ -72,7 +72,7 @@ Standard conversation with BicingBot:
 
 | 1/3                                                          | 2/3                                                          | 3/3                                                          |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| <center><img src='images\exemple1.png' width='300' style="float: left;"></center> | <center><img src='images\exemple1.png' width='300' style="float: left;"></center> | <center><img src='images\exemple3.png' width='300' style="float: right;"></center> |
+| <center><img src='images\exemple1.png' width='300' style="float: left;"></center> | <center><img src='images\exemple2.png' width='300' style="float: left;"></center> | <center><img src='images\exemple3.png' width='300' style="float: right;"></center> |
 
 ## Notes on running the server
 

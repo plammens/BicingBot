@@ -130,6 +130,13 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
 @cmdhandler()
 @progress
 def start(update: tg.Update, context: tge.CallbackContext):
+    """
+    Function that handles /start command for starting the bot.
+    Creates chat_data, which is necessary for almost the rest of the bot functions
+
+    :param update: object that indicates a telegram update
+    :param context: additional data (nothing in this case)
+    """
     chat_data = context.chat_data
     chat_data['last_fetch_time'] = datetime.datetime.now()
     chat_data['stations'] = data.fetch_stations()
@@ -139,16 +146,37 @@ def start(update: tg.Update, context: tge.CallbackContext):
 
 @cmdhandler(command='help')
 def help_cmd(update: tg.Update, _: tge.CallbackContext):
+    """
+    Function that handles /help command. It replies with a message where
+    appears all the commands with a brief description.
+
+    :param update: object that indicates a telegram update
+    :param _: nothing to do here (nothing in this case)
+    """
     update.message.reply_markdown(HELP_TXT, disable_web_page_preview=True)
 
 
 @cmdhandler()
 def authors(update: tg.Update, _: tge.CallbackContext):
+    """
+    Function that handles /authors command. It replies with a message
+    with the authors of the bot and a link to their Github.
+
+    :param update: object that indicates a telegram update
+    :param _: nothing to do here (nothing in this case)
+    """
     update.message.reply_markdown(AUTHORS_TXT, disable_web_page_preview=True)
 
 
 @cmdhandler()
 def status(update: tg.Update, context: tge.CallbackContext):
+    """
+    Function that handles /status command. It replies with
+    the information of the bot in that moment.
+
+    :param update: object that indicates a telegram update
+    :param context: additional data (nothing in this case)
+    """
     chat_data = context.chat_data
 
     def lines():
@@ -167,6 +195,13 @@ def status(update: tg.Update, context: tge.CallbackContext):
 @cmdhandler(command='graph')
 @progress
 def make_graph(update: tg.Update, context: tge.CallbackContext):
+    """
+    Function that handles /graph <dist> command. It creates the
+    geometric graph and saves it for next commands.
+
+    :param update: object that indicates a telegram update
+    :param context: additional data (only <dist> is needed)
+    """
     graph = get_graph(context)
     distance, = get_args(context, types=(('distance', float),))
     graph.construct_graph(distance)
@@ -175,18 +210,39 @@ def make_graph(update: tg.Update, context: tge.CallbackContext):
 
 @cmdhandler()
 def nodes(update: tg.Update, context: tge.CallbackContext):
+    """
+    Function that handles /nodes command. It replies with the
+    actual number of nodes of the graph created previously.
+
+    :param update: object that indicates a telegram update
+    :param context: additional data (nothing in this case)
+    """
     graph = get_graph(context)
     update.message.reply_text(graph.number_of_nodes())
 
 
 @cmdhandler()
 def edges(update: tg.Update, context: tge.CallbackContext):
+    """
+    Function that handles /edges command. It replies with the
+    actual number of edges of the graph created previously.
+
+    :param update: object that indicates a telegram update
+    :param context: additional data (nothing in this case)
+    """
     graph = get_graph(context)
     update.message.reply_text(graph.number_of_edges())
 
 
 @cmdhandler()
 def components(update: tg.Update, context: tge.CallbackContext):
+    """
+    Function that handles /components command. It replies with the
+    actual number of components of the graph created previously.
+
+    :param update: object that indicates a telegram update
+    :param context: additional data (nothing in this case)
+    """
     graph = get_graph(context)
     update.message.reply_text(graph.components)
 
@@ -194,6 +250,13 @@ def components(update: tg.Update, context: tge.CallbackContext):
 @cmdhandler()
 @progress
 def plotgraph(update: tg.Update, context: tge.CallbackContext):
+    """
+    Function that handles /plotgraph command. It replies with
+    a image of the graph created previously.
+
+    :param update: object that indicates a telegram update
+    :param context: additional data (nothing in this case)
+    """
     graph = get_graph(context)
     image = data.save_image_to_memory(graph.plot())
     update.message.reply_photo(photo=image)
@@ -202,6 +265,13 @@ def plotgraph(update: tg.Update, context: tge.CallbackContext):
 @cmdhandler()
 @progress
 def route(update: tg.Update, context: tge.CallbackContext):
+    """
+    Function that handles /route <loc1> <loc2> command. It replies with a
+    image of the shortest route
+
+    :param update: object that indicates a telegram update
+    :param context: additional data (two directions <loc1> <loc2>)
+    """
     graph = get_graph(context)
     context.args = ' '.join(context.args).split(',')
     origin, destination, = get_args(context, types=(('origin', str), ('destination', str),))
@@ -218,6 +288,15 @@ def route(update: tg.Update, context: tge.CallbackContext):
 @cmdhandler()
 @progress
 def distribute(update: tg.Update, context: tge.CallbackContext):
+    """
+    Function that handles /distribute <bikes> <docks> command.
+    It replies with the total cost of redistribution the bicicles
+    using graph edges such that in each bicing station there are
+    at least <bikes> number of bikes and <docks> number of docks.
+
+    :param update: object that indicates a telegram update
+    :param context: additional data
+    """
     graph = get_graph(context)
     min_bikes, min_free_docks = get_args(context, (('min_bikes', int), ('min_bikes', int)))
     total_bikes, total_cost, flow_dict = graph.distribute(min_bikes, min_free_docks)
@@ -235,6 +314,13 @@ def distribute(update: tg.Update, context: tge.CallbackContext):
 
 @cmdhandler()
 def reset(update: tg.Update, context: tge.CallbackContext):
+    """
+    Function that handles /reset command. It clears all
+    the data.
+
+    :param update: object that indicates a telegram update
+    :param context: additional data (nothing in this case)
+    """
     context.chat_data.clear()
     update.message.reply_markdown(OK_TXT)
 

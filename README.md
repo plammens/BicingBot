@@ -67,7 +67,9 @@ Finding an example of an internal error is left as a fun challenge to the user.
 
 
 ### Example
+
 <center><img src='exemple1.png' width='400'></center>
+
 ## Notes on running the server
 
 ## Project structure

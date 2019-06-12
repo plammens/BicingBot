@@ -1,4 +1,5 @@
 import collections
+import itertools as it
 from typing import Dict, Iterable, Set, Tuple
 
 import geopy
@@ -105,37 +106,29 @@ class BicingGraph(nx.Graph):
             self._add_edges_in_grid(_DistanceGrid(self.nodes, dist), dist)
         self._distance = dist
 
-    def _add_edges_in_grid(self, grid: '_DistanceGrid', dist: float):
+    def _add_edges_in_grid(self, grid: '_DistanceGrid', max_distance: float):
         """
         Helper method for ``construct_graph``. Adds edges among neighbouring
         nodes in a pre-constructed grid.
         :param grid: grid such that within each cell all nodes are within `dist`
         meters apart
-        :param dist: distance
+        :param max_distance: distance
         """
+        grid_dict = grid.cell_dict
 
         def neighbours(cell_idx: Tuple[int, int]) -> Iterable[Tuple[int, int]]:
             i, j = cell_idx
-            step_range = (0, -1, 1)
-            indices = ((i + di, j + dj) for di in step_range for dj in step_range)
-            next(indices)  # discard (i + 0, j + 0)
-            return indices
+            for di, dj in it.product((0, 1, -1), repeat=2):
+                yield grid_dict.get((i + di, j + dj), default=tuple())  # default is empty cell
 
-        grid_dict = grid.cell_dict
         for index, cell in grid_dict.items():
-            # add every edge in the Cartesian product cell x cell
-            for a in cell:
-                for b in cell:
-                    if distance(a, b) <= dist:
-                        self.add_edge(a, b, weight=distance(a, b))
-            # connect neighbours:
-            for neighbour_index in neighbours(index):
-                neighbour = grid_dict.get(neighbour_index, tuple())  # default is empty cell
-
-                for a in cell:
-                    for b in neighbour:
-                        if distance(a, b) <= dist:
-                            self.add_edge(a, b, weight=distance(a, b))
+            # add every edge in the Cartesian product cell x neighbour if distance(·, ·) <= max_dist
+            for neighbour in neighbours(index):
+                pairs = it.combinations(cell, r=2) if cell is neighbour else it.product(cell, neighbour)
+                for a, b in pairs:
+                    dist = distance(a, b)
+                    if 0 < dist <= max_distance:
+                        self.add_edge(a, b, weight=dist)
 
             # mark cell as empty (to avoid repeated computations)
             cell.clear()

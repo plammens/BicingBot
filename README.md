@@ -68,9 +68,9 @@ Finding an example of an internal error is left as a fun challenge to the user.
 
 ### Example
 
-<center><img src='exemple1.png' width='200'>
-<img src='exemple2.png' width='200'>
-<img src='exemple3.png' width='200'></center>
+<left><img src='exemple1.png' width='200' style="float: left;"></left>
+<center><img src='exemple2.png' width='200' style="float: center;"></center>
+<right><img src='exemple3.png' width='200' style="float: right;"></right>
 
 ## Notes on running the server
 

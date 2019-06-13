@@ -18,8 +18,6 @@ from haversine.haversine import _AVG_EARTH_RADIUS_KM
 class Coordinate:
     """Represents a geographical coordinate."""
     __slots__ = 'lat', 'lon'
-    lat: float  # latitude
-    lon: float  # longitude
 
     def __init__(self, latitude: float, longitude: float):
         self.lat = latitude
@@ -61,8 +59,8 @@ class StationWrapper:
 # ------------------------ BicingGraph ------------------------
 
 FlowEdge = collections.namedtuple('FlowEdge', ['tail', 'head', 'flow', 'dist'])
-_NODE_SCALE_FACTOR: float = 5 / 800
-_FLOAT_TO_INT_FACTOR: float = 1000.0
+_NODE_SCALE_FACTOR = 5 / 800
+_FLOAT_TO_INT_FACTOR = 1000.0
 
 
 class BicingGraphUnfeasibleError(nx.NetworkXUnfeasible):
@@ -74,7 +72,7 @@ class BicingGraph(nx.Graph):
         super().__init__(**attr)
         if stations:
             self.add_nodes_from(stations)
-        self._distance: float = 0.0
+        self._distance = 0.0
 
     @classmethod
     def from_dataframe(cls, stations: pd.DataFrame, **kwargs) -> 'BicingGraph':
@@ -222,7 +220,7 @@ class BicingGraph(nx.Graph):
         return total_bikes, round(cost / _FLOAT_TO_INT_FACTOR, 3), flow_dict
 
     def _write_bike_demands(self, min_bikes: int, min_free_docks: int):
-        total_demand: int = 0
+        total_demand = 0
 
         for node, attributes in self.nodes(data=True):
             bikes, free_docks = node.num_bikes_available, node.num_docks_available
@@ -303,7 +301,7 @@ class _DistanceGrid:
             lon_index = int((node.lon - bottom_left.lon) / delta_lon)
             grid.setdefault((lat_index, lon_index), set()).add(node)
 
-        self._grid: Dict[Tuple[int, int], Set] = grid
+        self._grid = grid
 
     @property
     def cell_dict(self) -> Dict[Tuple[int, int], Set]:

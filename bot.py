@@ -29,19 +29,19 @@ def load_text(name: str) -> str:
 
 
 # Construct bot objects
-TOKEN: str = load_text('token')
+TOKEN = load_text('token')
 UPDATER = tge.Updater(token=TOKEN, use_context=True)
 DISPATCHER = UPDATER.dispatcher
 BOT = UPDATER.bot
 
 # Load text files:
-START_TXT: str = load_text('start')
-HELP_TXT: str = load_text('help')
-AUTHORS_TXT: str = load_text('authors')
-OK_TXT: str = load_text('ok')
-USAGE_ERROR_TXT: str = load_text('usage-error')
-INTERNAL_ERROR_TXT: str = load_text('internal-error')
-STATUS_TXT: str = load_text('status')
+START_TXT = load_text('start')
+HELP_TXT = load_text('help')
+AUTHORS_TXT = load_text('authors')
+OK_TXT = load_text('ok')
+USAGE_ERROR_TXT = load_text('usage-error')
+INTERNAL_ERROR_TXT = load_text('internal-error')
+STATUS_TXT = load_text('status')
 
 # --------------------------------------- Decorators  ---------------------------------------
 
@@ -104,7 +104,7 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
 
     def decorated(update: tg.Update, context: tge.CallbackContext):
         prompt_gen = itertools.cycle('Processing{:<3} ⏱'.format('.' * i) for i in range(4))
-        progress_message: tg.Message = update.message.reply_text(next(prompt_gen))
+        progress_message = update.message.reply_text(next(prompt_gen))
 
         def progress_job_callback(job_context: tge.CallbackContext):
             try:
@@ -113,7 +113,7 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
                 job_context.job.schedule_removal()  # shutdown if already deleted
 
         logging.debug('adding progress message to {}'.format(update.effective_chat.id))
-        job: tge.Job = context.job_queue.run_repeating(progress_job_callback, 0.5)
+        job = context.job_queue.run_repeating(progress_job_callback, 0.5)
         try:
             callback(update, context)
         finally:

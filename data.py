@@ -30,10 +30,10 @@ class Coordinate:
         yield self.lon
 
     def __repr__(self):
-        return f'({self.lat}, {self.lon})'
+        return '({}, {})'.format(self.lat, self.lon)
 
     def __str__(self):
-        return f'({self.lat}º N, {self.lon}º E)'
+        return '({}º N, {}º E)'.format(self.lat, self.lon)
 
 
 class StationWrapper:
@@ -229,8 +229,8 @@ class BicingGraph(nx.Graph):
             total_docks = bikes + free_docks
             if total_docks < min_bikes + min_free_docks:
                 raise BicingGraphUnfeasibleError(
-                    f'cannot satisfy constraints `min_bikes={min_bikes}`, `min_free_docks='
-                    f'{min_free_docks}` on a station with `{total_docks}` total docks'
+                    'cannot satisfy constraints `min_bikes={}`, `min_free_docks={}` on a '
+                    'station with `{}` total docks'.format(min_bikes, min_free_docks, total_docks)
                 )
 
             bike_deficit = ramp(min_bikes - bikes)
@@ -403,7 +403,7 @@ def address_to_coord(address: str) -> Coordinate:
     geolocator = geopy.geocoders.Nominatim(user_agent="BCNBicingBot")
     location_coord = geolocator.geocode(', '.join((address, 'Barcelona')))
     if not location_coord:
-        raise ValueError(f'invalid address: {address}')
+        raise ValueError('invalid address: ' + address)
     return Coordinate(location_coord.latitude, location_coord.longitude)
 
 

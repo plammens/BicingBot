@@ -21,11 +21,11 @@ def load_text(name: str) -> str:
     for prefix in ('text', '.'):
         for extension in ('md', 'txt', ''):
             try:
-                with open(f'{prefix}/{name}.{extension}', mode='r', encoding='utf-8') as file:
+                with open('{}/{}.{}'.format(prefix, name, extension), mode='r', encoding='utf-8') as file:
                     return file.read().strip()
             except FileNotFoundError:
                 continue
-    raise FileNotFoundError(f'could not find `{name}` text file')
+    raise FileNotFoundError('could not find `{}` text file'.format(name))
 
 
 # Construct bot objects
@@ -72,22 +72,22 @@ def cmdhandler(command: str = None, **handler_kwargs) -> callable:
         command = command or callback.__name__
 
         def decorated(update: tg.Update, context: tge.CallbackContext):
-            command_info = f'/{command}@{update.effective_chat.id}'
-            logging.info(f'reached {command_info}')
+            command_info = '/{}@{}'.format(command, update.effective_chat.id)
+            logging.info('reached {}'.format(command_info))
             try:
                 callback(update, context)
-                logging.info(f'served {command_info}')
+                logging.info('served {}'.format(command_info))
             except (UsageError, ValueError, data.nx.NetworkXAlgorithmError) as e:
                 text = '\n\n'.join([USAGE_ERROR_TXT, format_exception_md(e),
                                     'See /help for usage info.'])
                 markdown_safe_reply(update.message, text)
-                logging.info(f'served {command_info} (usage/algorithm error)')
+                logging.info('served {} (usage/algorithm error)'.format(command_info))
             except Exception as e:
                 text = '\n\n'.join([INTERNAL_ERROR_TXT, format_exception_md(e)])
                 markdown_safe_reply(update.message, text)
-                logging.error(f'{command_info}: unexpected exception', exc_info=e)
+                logging.error('{}: unexpected exception'.format(command_info), exc_info=e)
             finally:
-                logging.debug(f'exiting {command_info}')
+                logging.debug('exiting {}'.format(command_info))
 
         handler = tge.CommandHandler(command, decorated, **handler_kwargs)
         DISPATCHER.add_handler(handler)
@@ -112,12 +112,12 @@ def progress(callback: CommandCallbackType) -> CommandCallbackType:
             except tg.error.BadRequest:
                 job_context.job.schedule_removal()  # shutdown if already deleted
 
-        logging.debug(f'adding progress message to {update.effective_chat.id}')
+        logging.debug('adding progress message to {}'.format(update.effective_chat.id))
         job: tge.Job = context.job_queue.run_repeating(progress_job_callback, 0.5)
         try:
             callback(update, context)
         finally:
-            logging.debug(f'removing progress message from {update.effective_chat.id}')
+            logging.debug('removing progress message from {}'.format(update.effective_chat.id))
             job.schedule_removal()
             progress_message.delete()
 
@@ -184,8 +184,8 @@ def status(update: tg.Update, context: tge.CallbackContext):
         if graph:
             yield 'Initialised: `True`'
             time = chat_data['last_fetch_time'].isoformat(sep=' ', timespec='minutes')
-            yield f"Last fetch time: `{time}`"
-            yield f"Current graph distance: `{graph.distance} m`"
+            yield "Last fetch time: `{}`".format(time)
+            yield "Current graph distance: `{} m`".format(graph.distance)
         else:
             yield 'Initialised: `False`'
 
@@ -282,7 +282,7 @@ def route(update: tg.Update, context: tge.CallbackContext):
     path, total_seconds = graph.route(origin, destination)
     time = datetime.timedelta(seconds=int(total_seconds))
     image = data.save_image_to_memory(data.plot_route(path))
-    update.message.reply_photo(photo=image, caption=f'Expected duration of the route: {time}')
+    update.message.reply_photo(photo=image, caption='Expected duration of the route: {}'.format(time))
 
 
 @cmdhandler()
@@ -302,12 +302,12 @@ def distribute(update: tg.Update, context: tge.CallbackContext):
     total_bikes, total_cost, flow_dict = graph.distribute(min_bikes, min_free_docks)
 
     def lines():
-        yield f'*Total bikes displaced*: `{total_bikes}`'
-        yield f'*Total cost of redistribution*: `{round(total_cost / 1000, 3)} bikes·km`'
+        yield '*Total bikes displaced*: `{}`'.format(total_bikes)
+        yield '*Total cost of redistribution*: `{} bikes·km`'.format(round(total_cost / 1000, 3))
         if total_cost > 0:
             tail, head, flow, dist = graph.max_cost_edge(flow_dict)
-            yield f'*Maximal edge cost*: `{tail.Index} --> {head.Index}: {flow * dist}` ' \
-                f'(`{flow} bikes · {dist} m`)'
+            yield '*Maximal edge cost*: `{} --> {}: {}` (`{} bikes · {} m`)'.format(tail.Index, head.Index,
+                                                                                    flow * dist, flow, dist)
 
     update.message.reply_markdown('\n'.join(lines()))
 
@@ -342,10 +342,10 @@ class ArgCountError(UsageError):
 def format_exception_md(exception) -> str:
     """Format a markdown string from an exception, to be sent through Telegram"""
     assert isinstance(exception, Exception)
-    msg = f'`{type(exception).__name__}`'
+    msg = '`{}`'.format(type(exception).__name__)
     extra = str(exception)
     if extra:
-        msg += f'`:` {extra}'
+        msg += '`:` {}'.format(extra)
     return msg
 
 
@@ -354,7 +354,7 @@ def get_graph(context: tge.CallbackContext) -> data.BicingGraph:
     try:
         return context.chat_data['graph']
     except KeyError:
-        raise UsageError(f'graph not initialized yet (do so with /start)')
+        raise UsageError('graph not initialized yet (do so with /start)')
 
 
 def get_args(context: tge.CallbackContext, types: Tuple[Tuple[str, callable], ...]) -> Tuple:
@@ -362,15 +362,18 @@ def get_args(context: tge.CallbackContext, types: Tuple[Tuple[str, callable], ..
     # TODO: switch to ArgParse
     raw_args = context.args
     if len(raw_args) != len(types):
-        raise ArgCountError(f'invalid number of arguments ({len(raw_args)}, expected {len(types)})')
+        raise ArgCountError('invalid number of arguments ({}, expected {})'.format(len(raw_args),
+                                                                                   len(types)))
     args = []
     try:
         for arg, (name, typ) in zip(raw_args, types):
             args.append(typ(arg))
-    except ValueError:
         # noinspection PyUnboundLocalVariable
-        raise ArgValueError(f"invalid literal for `{name}` argument: "
-                            f"expected `{typ.__name__}`, got `'{arg}'`")
+        raise ArgValueError(
+            "invalid literal for `{}` argument: expected `{}`, got `'{}'`".format(name, typ.__name__, arg)
+        )
+    except ValueError:
+        pass
     return tuple(args)
 
 

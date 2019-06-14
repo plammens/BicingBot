@@ -9,8 +9,10 @@ import telegram.ext as tge
 
 import data
 
-
 # --------------------------------------- Bot initialisation ---------------------------------------
+
+TZ = datetime.timezone(datetime.timedelta(hours=2))
+
 
 def load_text(name: str) -> str:
     """
@@ -138,7 +140,7 @@ def start(update: tg.Update, context: tge.CallbackContext):
     :param context: additional data (nothing in this case)
     """
     chat_data = context.chat_data
-    chat_data['last_fetch_time'] = datetime.datetime.now()
+    chat_data['last_fetch_time'] = datetime.datetime.now(tz=TZ)
     chat_data['stations'] = data.fetch_stations()
     chat_data['graph'] = data.BicingGraph.from_dataframe(chat_data['stations'])
     update.message.reply_markdown(START_TXT)

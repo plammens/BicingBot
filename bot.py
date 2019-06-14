@@ -183,7 +183,7 @@ def status(update: tg.Update, context: tge.CallbackContext):
         graph = chat_data.get('graph', None)
         if graph:
             yield 'Initialised: `True`'
-            time = chat_data['last_fetch_time'].isoformat(sep=' ', timespec='minutes')
+            time = chat_data['last_fetch_time'].isoformat(sep=' ').rsplit('.', 1)[0]
             yield "Last fetch time: `{}`".format(time)
             yield "Current graph distance: `{} m`".format(graph.distance)
         else:
